@@ -1,0 +1,68 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Download, Eye } from 'lucide-react';
+import { StepWrapper } from './step-wrapper';
+
+interface PreviewStepProps {
+  isGenerating: boolean;
+  generatedResume: string;
+  onDownload: () => void;
+  onGenerateNew: () => void;
+}
+
+export function PreviewStep({ isGenerating, generatedResume, onDownload, onGenerateNew }: PreviewStepProps) {
+  return (
+    <StepWrapper>
+      <div className="w-full h-full">
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Generated Resume</CardTitle>
+                <CardDescription>
+                  Preview your generated resume
+                </CardDescription>
+              </div>
+              <div className="space-x-2">
+                <Button onClick={onDownload} className="flex items-center space-x-2">
+                  <Download className="h-4 w-4" />
+                  Download PDF
+                </Button>
+                <Button
+                  onClick={onGenerateNew}
+                  variant="outline"
+                >
+                  Generate New
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-white border rounded-lg p-6 min-h-[600px]">
+              {isGenerating ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-lg font-semibold">Generating your resume...</p>
+                    <p className="text-gray-500">This may take a few moments</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="prose max-w-none">
+                  {generatedResume ? (
+                    <div dangerouslySetInnerHTML={{ __html: generatedResume }} />
+                  ) : (
+                    <div className="text-center text-gray-500 py-8">
+                      <Eye className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                      <p>Resume preview will appear here</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </StepWrapper>
+  );
+} 
