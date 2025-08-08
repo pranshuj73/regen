@@ -133,7 +133,7 @@ ${formData.projects}
         />
       </div>
 
-      <Button type="submit" className="w-full">
+      <Button type="submit" className="w-full cursor-pointer">
         Continue to Job Description
       </Button>
     </form>

@@ -7,10 +7,10 @@ import { StepWrapper } from './step-wrapper';
 
 interface UploadStepProps {
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onBack: () => void;
+  onPasteResume: () => void;
 }
 
-export function UploadStep({ onFileUpload, onBack }: UploadStepProps) {
+export function UploadStep({ onFileUpload, onPasteResume }: UploadStepProps) {
   return (
     <StepWrapper>
       <Card className="w-full h-full">
@@ -21,29 +21,36 @@ export function UploadStep({ onFileUpload, onBack }: UploadStepProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="h-64 flex flex-col items-center justify-center space-y-2 bg-gray-800 hover:bg-gray-700 border-2 border-dashed border-gray-600 hover:border-gray-500 rounded-lg cursor-pointer">
+          <button 
+            className="h-64 w-full flex flex-col items-center justify-center space-y-2 bg-gray-800 hover:bg-gray-700 border-2 border-dashed border-gray-600 hover:border-gray-500 rounded-lg cursor-pointer"
+            onClick={() => document.getElementById('resume-upload')?.click()}
+          >
             <Upload className="h-8 w-8 text-blue-600" />
-            <Label htmlFor="resume-upload" className="cursor-pointer">
-              <div className="flex flex-col gap-2 text-center">
-                <span className="font-semibold">Upload Resume</span>
-                <span className="text-sm text-gray-500 block">PDF, DOC, DOCX, or TXT files</span>
-              </div>
-            </Label>
+            <div className="flex flex-col gap-2 text-center">
+              <span className="font-semibold">Upload Resume</span>
+              <span className="text-sm text-gray-500 block">PDF, TXT, DOC, or DOCX files</span>
+            </div>
             <Input
               id="resume-upload"
               type="file"
-              accept=".pdf,.doc,.docx,.txt"
+              accept=".pdf,.txt,.doc,.docx"
               onChange={onFileUpload}
               className="hidden"
             />
+          </button>
+          
+          <div className="text-center">
+            <span className="text-sm text-gray-500">or</span>
           </div>
+          
           <Button
-            onClick={onBack}
+            onClick={onPasteResume}
             variant="outline"
-            className="w-full"
+            className="w-full cursor-pointer"
           >
-            Back to Menu
+            Paste Resume Content
           </Button>
+
         </CardContent>
       </Card>
     </StepWrapper>

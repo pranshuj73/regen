@@ -120,3 +120,95 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styles for resume */
+@media print {
+  @page {
+    margin: 0.5in 0.5in;
+  }
+  
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Hide browser UI elements when printing */
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  
+  /* Hide browser chrome */
+  html {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Ensure clean print output */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Hide URL and browser elements */
+  @media print {
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    /* Add top margin to first element */
+    .resume-print{
+      margin: 0.75in;
+    }
+  }
+  
+  .resume-print {
+    font-size: 12px !important;
+    margin: 0.25in !important;
+    padding: 1.5rem !important;
+  }
+  
+  /* Ensure links are clickable and visible in print */
+  .resume-print a {
+    color: inherit !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    display: inline-block !important;
+    word-break: keep-all !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+  }
+  
+  .resume-print a:hover {
+    text-decoration: underline !important;
+    user-select: auto !important;
+    -webkit-user-select: auto !important;
+    -moz-user-select: auto !important;
+    -ms-user-select: auto !important;
+  }
+  
+  /* Force links to be treated as single units */
+  .resume-print a span {
+    pointer-events: none !important;
+    user-select: none !important;
+  }
+  
+  /* Special handling for social links */
+  .social-link {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+  
+  .social-link::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 2 !important;
+  }
+}

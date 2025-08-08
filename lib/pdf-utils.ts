@@ -1,63 +1,16 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { useReactToPrint } from 'react-to-print';
 
-export const downloadResumeAsPDF = async (htmlContent: string, filename: string = 'resume.pdf') => {
-  try {
-    // Create a temporary div to render the HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlContent;
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px';
-    tempDiv.style.top = '0';
-    tempDiv.style.width = '800px';
-    tempDiv.style.backgroundColor = 'white';
-    tempDiv.style.padding = '20px';
-    document.body.appendChild(tempDiv);
-
-    // Convert HTML to canvas
-    const canvas = await html2canvas(tempDiv, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      width: 800,
-      height: tempDiv.scrollHeight,
-    });
-
-    // Remove the temporary div
-    document.body.removeChild(tempDiv);
-
-    // Create PDF
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    
-    const imgWidth = 210; // A4 width in mm
-    const pageHeight = 295; // A4 height in mm
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-
-    let position = 0;
-
-    // Add first page
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    // Add additional pages if needed
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+export const useResumePrint = (contentRef: React.RefObject<HTMLDivElement | null>) => {
+  return useReactToPrint({
+    contentRef,
+    documentTitle: 'Resume',
+    onAfterPrint: () => {
+      console.log('Print completed');
+    },
+    onPrintError: (error) => {
+      console.error('Print error:', error);
     }
-
-    // Download the PDF
-    pdf.save(filename);
-    
-    return true;
-  } catch (error) {
-    console.error('Error generating PDF:', error);
-    return false;
-  }
+  });
 };
 
 export const generateResumeHTML = (data: any) => {

@@ -5,10 +5,10 @@ import { StepWrapper } from './step-wrapper';
 
 interface MenuStepProps {
   onUpload: () => void;
-  onManual: () => void;
+  onPaste: () => void;
 }
 
-export function MenuStep({ onUpload, onManual }: MenuStepProps) {
+export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
   return (
     <StepWrapper>
       <Card className="w-full h-full py-16">
@@ -24,7 +24,7 @@ export function MenuStep({ onUpload, onManual }: MenuStepProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button
               onClick={onUpload}
-              className="h-32 flex flex-col items-center justify-center space-y-2 bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-gray-400"
+              className="h-32 flex flex-col items-center justify-center space-y-2 bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-gray-400 cursor-pointer"
               variant="outline"
             >
               <Upload className="h-8 w-8 text-blue-600" />
@@ -33,13 +33,13 @@ export function MenuStep({ onUpload, onManual }: MenuStepProps) {
             </Button>
             
             <Button
-              onClick={onManual}
-              className="h-32 flex flex-col items-center justify-center space-y-2 bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-gray-400"
+              onClick={onPaste}
+              className="h-32 flex flex-col items-center justify-center space-y-2 bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-gray-400 cursor-pointer"
               variant="outline"
             >
               <FileText className="h-8 w-8 text-green-600" />
-              <span className="font-semibold">Manual Input</span>
-              <span className="text-sm text-gray-500">Write your details manually</span>
+              <span className="font-semibold">Paste Resume</span>
+              <span className="text-sm text-gray-500">Paste your resume content</span>
             </Button>
           </div>
         </CardContent>

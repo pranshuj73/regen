@@ -30,10 +30,10 @@ export function JDInputForm({ onSubmit, onSkip }: JDInputFormProps) {
       </div>
       
       <div className="flex space-x-2">
-        <Button type="submit" className="flex-1">
+        <Button type="submit" className="flex-1 cursor-pointer">
           Generate Tailored Resume
         </Button>
-        <Button type="button" onClick={onSkip} variant="outline" className="flex-1">
+        <Button type="button" onClick={onSkip} variant="outline" className="flex-1 cursor-pointer">
           Skip & Generate
         </Button>
       </div>

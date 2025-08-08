@@ -1,9 +1,12 @@
 export { MenuStep } from './menu-step';
 export { UploadStep } from './upload-step';
+export { PasteStep } from './paste-step';
+export { UpdatesStep } from './updates-step';
 export { ManualStep } from './manual-step';
 export { ManualInputForm } from './manual-input-form';
 export { JDStep } from './jd-step';
 export { JDInputForm } from './jd-input-form';
 export { PreviewStep } from './preview-step';
+export { PrintResume } from './print-resume';
 export { ResumeGeneratorWrapper } from './resume-generator-wrapper';
 export { StepWrapper } from './step-wrapper'; 

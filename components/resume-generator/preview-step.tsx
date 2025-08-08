@@ -1,68 +1,87 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Eye } from 'lucide-react';
+import { Download, Eye, Sparkles } from 'lucide-react';
 import { StepWrapper } from './step-wrapper';
+import { useRef } from 'react';
+import { useResumePrint } from '@/lib/pdf-utils';
+import { ResumeComponent } from './resume-component';
+import { PrintResume } from './print-resume';
 
 interface PreviewStepProps {
   isGenerating: boolean;
-  generatedResume: string;
+  generatedResume: any;
   onDownload: () => void;
   onGenerateNew: () => void;
 }
 
 export function PreviewStep({ isGenerating, generatedResume, onDownload, onGenerateNew }: PreviewStepProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useResumePrint(contentRef);
+
   return (
-    <StepWrapper>
-      <div className="w-full h-full">
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle>Generated Resume</CardTitle>
-                <CardDescription>
-                  Preview your generated resume
-                </CardDescription>
-              </div>
-              <div className="space-x-2">
-                <Button onClick={onDownload} className="flex items-center space-x-2">
-                  <Download className="h-4 w-4" />
-                  Download PDF
-                </Button>
-                <Button
-                  onClick={onGenerateNew}
-                  variant="outline"
-                >
-                  Generate New
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-white border rounded-lg p-6 min-h-[600px]">
-              {isGenerating ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-lg font-semibold">Generating your resume...</p>
-                    <p className="text-gray-500">This may take a few moments</p>
+    <>
+      {/* Print-only resume component */}
+      {generatedResume && <PrintResume data={generatedResume} />}
+      
+      {/* Main UI - hidden when printing */}
+      <div className="print:hidden">
+        <StepWrapper>
+          <div className="w-full h-full">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Generated Resume</CardTitle>
+                    <CardDescription>
+                      Preview your generated resume
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button onClick={handlePrint} className="flex items-center space-x-2 cursor-pointer">
+                      <Download className="h-4 w-4" />
+                      Print Resume
+                    </Button>
+                    <Button
+                      onClick={onGenerateNew}
+                      variant="outline"
+                      className="flex items-center space-x-2 cursor-pointer"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Generate New
+                    </Button>
                   </div>
                 </div>
-              ) : (
-                <div className="prose max-w-none">
-                  {generatedResume ? (
-                    <div dangerouslySetInnerHTML={{ __html: generatedResume }} />
+              </CardHeader>
+              <CardContent>
+                <div className="bg-white border rounded-lg p-6 min-h-[600px]">
+                  {isGenerating ? (
+                    <div className="flex items-center justify-center h-64">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p className="text-lg font-semibold">Generating your resume...</p>
+                        <p className="text-gray-500">This may take a few moments</p>
+                      </div>
+                    </div>
                   ) : (
-                    <div className="text-center text-gray-500 py-8">
-                      <Eye className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                      <p>Resume preview will appear here</p>
+                    <div className="prose max-w-none">
+                      {generatedResume ? (
+                        <div ref={contentRef}>
+                          <ResumeComponent data={generatedResume} />
+                        </div>
+                      ) : (
+                        <div className="text-center text-gray-500 py-8">
+                          <Eye className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                          <p>Resume preview will appear here</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
+        </StepWrapper>
       </div>
-    </StepWrapper>
+    </>
   );
 } 

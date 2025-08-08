@@ -14,15 +14,15 @@ export const ResumeContentSchema = z.object({
   email: z.string(),
   phone: z.string(),
   address: z.string(),
+  linkedin: z.string().optional(),
+  github: z.string().optional(),
   summary: z.string(),
-  education: z.array(
-    z.object({
-      institution: z.string(),
-      degree: z.string(),
-      location: z.string(),
-      duration: z.string()
-    })
-  ),
+  technical_skills: z.object({
+    languages: z.array(z.string()),
+    frameworks: z.array(z.string()),
+    development_tools: z.array(z.string()),
+    libraries: z.array(z.string())
+  }),
   experience: z.array(
     z.object({
       position: z.string(),
@@ -31,20 +31,23 @@ export const ResumeContentSchema = z.object({
       location: z.string(),
       responsibilities: z.array(z.string())
     })
-  ),
+  ).max(3),
   projects: z.array(
     z.object({
       title: z.string(),
       description: z.string(),
       technologies: z.array(z.string())
     })
+  ).max(3),
+  education: z.array(
+    z.object({
+      institution: z.string(),
+      degree: z.string(),
+      location: z.string(),
+      duration: z.string()
+    })
   ),
-  technical_skills: z.object({
-    languages: z.array(z.string()),
-    frameworks: z.array(z.string()),
-    development_tools: z.array(z.string()),
-    libraries: z.array(z.string())
-  })
+  certifications: z.array(z.string()).optional()
 });
 
 // Drizzle table for resume
