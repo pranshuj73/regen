@@ -6,10 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 interface JDInputFormProps {
   onSubmit: (jd: string) => void;
   onSkip: () => void;
+  initialJD?: string;
+  onChangeJD?: (text: string) => void;
 }
 
-export function JDInputForm({ onSubmit, onSkip }: JDInputFormProps) {
-  const [jobDescription, setJobDescription] = useState('');
+export function JDInputForm({ onSubmit, onSkip, initialJD, onChangeJD }: JDInputFormProps) {
+  const [jobDescription, setJobDescription] = useState(initialJD || '');
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -23,7 +25,11 @@ export function JDInputForm({ onSubmit, onSkip }: JDInputFormProps) {
         <Textarea
           id="jd"
           value={jobDescription}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setJobDescription(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+            const value = e.target.value;
+            setJobDescription(value);
+            onChangeJD?.(value);
+          }}
           rows={8}
           placeholder="Paste the job description here to tailor your resume specifically to this role..."
         />

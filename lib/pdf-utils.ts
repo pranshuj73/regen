@@ -5,10 +5,10 @@ export const useResumePrint = (contentRef: React.RefObject<HTMLDivElement | null
     contentRef,
     documentTitle: 'Resume',
     onAfterPrint: () => {
-      console.log('Print completed');
+  
     },
     onPrintError: (error) => {
-      console.error('Print error:', error);
+  
     }
   });
 };

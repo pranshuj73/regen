@@ -14,48 +14,34 @@ import {
 
 type Step = 'menu' | 'upload' | 'paste' | 'updates' | 'jd' | 'preview';
 
-interface NavigationHistory {
-  step: Step;
-  resumeData: ResumeData;
-  generatedResume: any;
-  isGenerating: boolean;
+interface PageState {
+  upload?: { content: string };
+  updates?: { selectedIds: string[]; customUpdates: string; combinedText: string };
+  jd?: { text: string };
 }
 
-interface ResumeData {
-  content: string;
-  updates?: string;
-  jobDescription?: string;
+interface NavState {
+  history: Step[];
+  pageState: PageState;
 }
 
 export default function Home() {
-  const [navigationHistory, setNavigationHistory] = useState<NavigationHistory[]>([
-    { 
-      step: 'menu', 
-      resumeData: { content: '' }, 
-      generatedResume: '', 
-      isGenerating: false 
-    }
-  ]);
-  const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0);
-  
-  // Get current state from navigation history
-  const currentHistory = navigationHistory[currentHistoryIndex];
-  const currentStep = currentHistory.step;
-  const resumeData = currentHistory.resumeData;
-  const isGenerating = currentHistory.isGenerating;
-  const generatedResume = currentHistory.generatedResume;
+  const [navState, setNavState] = useState<NavState>({
+    history: ['menu'],
+    pageState: {
+      upload: { content: '' },
+      updates: { selectedIds: [], customUpdates: '', combinedText: '' },
+      jd: { text: '' },
+    },
+  });
+  const [generatedResume, setGeneratedResume] = useState<any>('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  // Helper functions to update current step state
-  const updateCurrentStep = (updates: Partial<Omit<NavigationHistory, 'step'>>) => {
-    setNavigationHistory(prev => {
-      const newHistory = [...prev];
-      newHistory[currentHistoryIndex] = {
-        ...newHistory[currentHistoryIndex],
-        ...updates
-      };
-      return newHistory;
-    });
-  };
+  const currentStep = navState.history[navState.history.length - 1];
+
+  // DEBUG LOGGING REMOVED
+
+
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -78,8 +64,11 @@ export default function Home() {
             
             if (response.ok) {
               const result = await response.json();
-              const newResumeData = { content: result.text };
-              navigateTo('updates', { resumeData: newResumeData });
+              setNavState(prev => ({
+                ...prev,
+                pageState: { ...prev.pageState, upload: { content: result.text } },
+                history: [...prev.history, 'updates'],
+              }));
             } else {
               alert('Failed to parse PDF. Please try copying and pasting the text content instead.');
             }
@@ -90,8 +79,11 @@ export default function Home() {
         } else {
           // Handle text files
           const content = new TextDecoder().decode(arrayBuffer);
-          const newResumeData = { content };
-          navigateTo('updates', { resumeData: newResumeData });
+          setNavState(prev => ({
+            ...prev,
+            pageState: { ...prev.pageState, upload: { content } },
+            history: [...prev.history, 'updates'],
+          }));
         }
       };
       reader.readAsArrayBuffer(file);
@@ -99,76 +91,104 @@ export default function Home() {
   };
 
   const handlePasteInput = (content: string) => {
-    const newResumeData = { content };
-    navigateTo('updates', { resumeData: newResumeData });
+    setNavState(prev => ({
+      ...prev,
+      pageState: { ...prev.pageState, upload: { content } },
+      history: [...prev.history, 'updates'],
+    }));
   };
 
   const handleUpdatesSubmit = (updates: string) => {
-    const newResumeData = { ...resumeData, updates };
-    navigateTo('jd', { resumeData: newResumeData });
+    setNavState(prev => ({
+      ...prev,
+      pageState: {
+        ...prev.pageState,
+        updates: {
+          selectedIds: prev.pageState.updates?.selectedIds || [],
+          customUpdates: prev.pageState.updates?.customUpdates || '',
+          combinedText: updates,
+        },
+      },
+      history: [...prev.history, 'jd'],
+    }));
+  };
+
+  const handleUpdatesPersist = (meta: { selectedIds: string[]; customUpdates: string; combinedText: string }) => {
+    setNavState(prev => ({
+      ...prev,
+      pageState: { ...prev.pageState, updates: meta },
+    }));
   };
 
   const handleJDSubmit = (jd: string) => {
-    const newResumeData = { ...resumeData, jobDescription: jd };
-    updateCurrentStep({ resumeData: newResumeData });
-    generateResume();
+    setNavState(prev => ({
+      ...prev,
+      pageState: { ...prev.pageState, jd: { text: jd } },
+    }));
+    setTimeout(() => generateResume(), 0);
+  };
+
+  const handleJDChange = (text: string) => {
+    setNavState(prev => ({
+      ...prev,
+      pageState: { ...prev.pageState, jd: { text } },
+    }));
   };
 
   const generateResume = async () => {
-    updateCurrentStep({ isGenerating: true });
+    // Update to show generating state
+    setIsGenerating(true);
+
     try {
-      console.log('Sending resume data:', resumeData);
+      const payload = {
+        content: navState.pageState.upload?.content || '',
+        updates: navState.pageState.updates?.combinedText || '',
+        jobDescription: navState.pageState.jd?.text || '',
+      };
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(resumeData),
+        body: JSON.stringify(payload),
       });
       
       if (response.ok) {
         const result = await response.json();
-        navigateTo('preview', { resumeData, generatedResume: result.data, isGenerating: false });
+        setGeneratedResume(result.data);
+        setIsGenerating(false);
+        setNavState(prev => ({ ...prev, history: [...prev.history, 'preview'] }));
       }
     } catch (error) {
-      console.error('Error generating resume:', error);
-      updateCurrentStep({ isGenerating: false });
+      // noop
+      setIsGenerating(false);
     }
   };
 
   const handleGenerateNew = () => {
-    setNavigationHistory([{ step: 'menu' }]);
-    setCurrentStep('menu');
+    setNavState({
+      history: ['menu'],
+      pageState: {
+        upload: { content: '' },
+        updates: { selectedIds: [], customUpdates: '', combinedText: '' },
+        jd: { text: '' },
+      },
+    });
+    setGeneratedResume('');
+    setIsGenerating(false);
   };
 
-  const navigateTo = (step: Step, updates?: Partial<Omit<NavigationHistory, 'step'>>) => {
-    const newHistoryItem: NavigationHistory = {
-      step,
-      resumeData: updates?.resumeData || resumeData,
-      generatedResume: updates?.generatedResume || generatedResume,
-      isGenerating: updates?.isGenerating || false
-    };
-    
-    // Remove any forward history if we're navigating to a new step
-    const newHistory = navigationHistory.slice(0, currentHistoryIndex + 1);
-    newHistory.push(newHistoryItem);
-    
-    setNavigationHistory(newHistory);
-    setCurrentHistoryIndex(newHistory.length - 1);
+  const navigateTo = (step: Step) => {
+    setNavState(prev => ({ ...prev, history: [...prev.history, step] }));
   };
 
   const goBack = () => {
-    if (currentHistoryIndex > 0) {
-      setCurrentHistoryIndex(currentHistoryIndex - 1);
-    }
+    setNavState(prev => (
+      prev.history.length > 1
+        ? { ...prev, history: prev.history.slice(0, -1) }
+        : prev
+    ));
   };
 
-  const goForward = () => {
-    if (currentHistoryIndex < navigationHistory.length - 1) {
-      setCurrentHistoryIndex(currentHistoryIndex + 1);
-    }
-  };
-
-  const canGoBack = currentHistoryIndex > 0;
-  const canGoForward = currentHistoryIndex < navigationHistory.length - 1;
+  const canGoBack = navState.history.length > 1;
 
   return (
     <div className="print:hidden">
@@ -177,7 +197,10 @@ export default function Home() {
         switch (currentStep) {
           case 'menu':
             return (
-              <StepWrapper showBackButton={canGoBack} onBack={goBack}>
+              <StepWrapper 
+                showBackButton={canGoBack} 
+                onBack={goBack}
+              >
                 <MenuStep
                   onUpload={() => navigateTo('upload')}
                   onPaste={() => navigateTo('paste')}
@@ -186,7 +209,10 @@ export default function Home() {
             );
           case 'upload':
             return (
-              <StepWrapper showBackButton={canGoBack} onBack={goBack}>
+              <StepWrapper 
+                showBackButton={canGoBack} 
+                onBack={goBack}
+              >
                 <UploadStep
                   onFileUpload={handleFileUpload}
                   onPasteResume={() => navigateTo('paste')}
@@ -195,7 +221,10 @@ export default function Home() {
             );
           case 'paste':
             return (
-              <StepWrapper showBackButton={canGoBack} onBack={goBack}>
+              <StepWrapper 
+                showBackButton={canGoBack} 
+                onBack={goBack}
+              >
                 <PasteStep
                   onSubmit={handlePasteInput}
                   onUploadResume={() => navigateTo('upload')}
@@ -204,25 +233,38 @@ export default function Home() {
             );
           case 'updates':
             return (
-              <StepWrapper showBackButton={canGoBack} onBack={goBack}>
+              <StepWrapper 
+                showBackButton={canGoBack} 
+                onBack={goBack}
+              >
                 <UpdatesStep
                   onSubmit={handleUpdatesSubmit}
-                  onBack={() => navigateTo('paste')}
+                  onSubmitWithMeta={handleUpdatesPersist}
+                  initialSelectedIds={navState.pageState?.updates?.selectedIds}
+                  initialCustomUpdates={navState.pageState?.updates?.customUpdates}
                 />
               </StepWrapper>
             );
           case 'jd':
             return (
-              <StepWrapper showBackButton={canGoBack} onBack={goBack}>
+              <StepWrapper 
+                showBackButton={canGoBack} 
+                onBack={goBack}
+              >
                 <JDStep
                   onSubmit={handleJDSubmit}
                   onSkip={() => generateResume()}
+                  initialJD={navState.pageState?.jd?.text}
+                  onChangeJD={handleJDChange}
                 />
               </StepWrapper>
             );
           case 'preview':
             return (
-              <StepWrapper showBackButton={canGoBack} onBack={goBack}>
+              <StepWrapper 
+                showBackButton={canGoBack} 
+                onBack={goBack}
+              >
                 <PreviewStep
                   isGenerating={isGenerating}
                   generatedResume={generatedResume}
@@ -233,7 +275,10 @@ export default function Home() {
             );
           default:
             return (
-              <StepWrapper showBackButton={canGoBack} onBack={goBack}>
+              <StepWrapper 
+                showBackButton={canGoBack} 
+                onBack={goBack}
+              >
                 <MenuStep
                   onUpload={() => navigateTo('upload')}
                   onPaste={() => navigateTo('paste')}

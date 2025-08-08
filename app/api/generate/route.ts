@@ -7,9 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     const { content, updates, jobDescription } = await request.json();
     
-    console.log('Received content:', content);
-    console.log('Received updates:', updates);
-    console.log('Received jobDescription:', jobDescription);
+  
 
     // Create the prompt for resume generation
     let prompt = `Create a professional resume based on the following information:\n${content}`;
@@ -19,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
     
     if (jobDescription) {
-      prompt += `\nTailor this resume specifically for the following job description:\n${jobDescription}`;
+      prompt += `\nTailor this resume specifically for the following job description and ensure to keep the resume relevant to the job description:\n${jobDescription}`;
     }
 
                     prompt += `\nGenerate a well-structured, professional resume with the following requirements:
@@ -40,7 +38,7 @@ export async function POST(request: NextRequest) {
       prompt,
     });
 
-    console.log(result.object);
+    
 
     // Return the structured data for the React component
     const resumeData = result.object;
@@ -51,7 +49,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error generating resume:', error);
+    
     return NextResponse.json(
       { error: 'Failed to generate resume' },
       { status: 500 }

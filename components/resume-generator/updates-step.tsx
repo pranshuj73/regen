@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -8,7 +8,10 @@ import { StepWrapper } from './step-wrapper';
 
 interface UpdatesStepProps {
   onSubmit: (updates: string) => void;
-  onBack: () => void;
+  onSubmitWithMeta?: (meta: { selectedIds: string[]; customUpdates: string; combinedText: string }) => void;
+  // Optional initial values so the step can hydrate when navigating back
+  initialSelectedIds?: string[];
+  initialCustomUpdates?: string;
 }
 
 const commonUpdates = [
@@ -44,16 +47,25 @@ const commonUpdates = [
   }
 ];
 
-export function UpdatesStep({ onSubmit, onBack }: UpdatesStepProps) {
-  const [selectedUpdates, setSelectedUpdates] = useState<string[]>([]);
-  const [customUpdates, setCustomUpdates] = useState('');
+export function UpdatesStep({ onSubmit, onSubmitWithMeta, initialSelectedIds, initialCustomUpdates }: UpdatesStepProps) {
+  const [selectedUpdates, setSelectedUpdates] = useState<string[]>(initialSelectedIds || []);
+  const [customUpdates, setCustomUpdates] = useState(initialCustomUpdates || '');
 
-  const handleUpdateToggle = (updateId: string) => {
-    setSelectedUpdates(prev => 
-      prev.includes(updateId) 
+  // Ensure hydration if props change
+  useEffect(() => {
+    if (initialSelectedIds) setSelectedUpdates(initialSelectedIds);
+  }, [initialSelectedIds]);
+  useEffect(() => {
+    if (initialCustomUpdates !== undefined) setCustomUpdates(initialCustomUpdates);
+  }, [initialCustomUpdates]);
+
+    const handleUpdateToggle = (updateId: string) => {
+    setSelectedUpdates(prev => {
+      const newSelection = prev.includes(updateId)
         ? prev.filter(id => id !== updateId)
-        : [...prev, updateId]
-    );
+        : [...prev, updateId];
+      return newSelection;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -62,13 +74,14 @@ export function UpdatesStep({ onSubmit, onBack }: UpdatesStepProps) {
     const selectedDescriptions = commonUpdates
       .filter(update => selectedUpdates.includes(update.id))
       .map(update => update.description);
-    
+
     const allUpdates = [
       ...selectedDescriptions,
       customUpdates
     ].filter(Boolean).join('\n');
-    
+
     onSubmit(allUpdates);
+    onSubmitWithMeta?.({ selectedIds: selectedUpdates, customUpdates, combinedText: allUpdates });
   };
 
   return (
@@ -85,16 +98,15 @@ export function UpdatesStep({ onSubmit, onBack }: UpdatesStepProps) {
             <Label className="text-base font-semibold">Common Updates</Label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {commonUpdates.map((update) => (
-                <div 
+                <div
                   key={update.id} 
-                  className="flex items-start space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-800"
+                  className="flex text-left items-start space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-800"
                   onClick={() => handleUpdateToggle(update.id)}
                 >
                   <Checkbox
                     id={update.id}
                     checked={selectedUpdates.includes(update.id)}
-                    onCheckedChange={() => handleUpdateToggle(update.id)}
-                    className="cursor-pointer"
+                    className="pointer-events-none"
                   />
                   <div className="space-y-1">
                     <Label 
@@ -122,14 +134,9 @@ export function UpdatesStep({ onSubmit, onBack }: UpdatesStepProps) {
               />
             </div>
 
-            <div className="flex space-x-2">
-              <Button type="submit" className="flex-1 cursor-pointer">
-                Continue to Job Description
-              </Button>
-              <Button type="button" onClick={onBack} variant="outline" className="flex-1 cursor-pointer">
-                Back
-              </Button>
-            </div>
+            <Button type="submit" className="w-full cursor-pointer">
+              Continue to Job Description
+            </Button>
           </form>
         </CardContent>
       </Card>

@@ -5,9 +5,11 @@ import { StepWrapper } from './step-wrapper';
 interface JDStepProps {
   onSubmit: (jd: string) => void;
   onSkip: () => void;
+  initialJD?: string;
+  onChangeJD?: (text: string) => void;
 }
 
-export function JDStep({ onSubmit, onSkip }: JDStepProps) {
+export function JDStep({ onSubmit, onSkip, initialJD, onChangeJD }: JDStepProps) {
   return (
     <StepWrapper>
       <Card className="w-full h-full">
@@ -18,7 +20,7 @@ export function JDStep({ onSubmit, onSkip }: JDStepProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <JDInputForm onSubmit={onSubmit} onSkip={onSkip} />
+          <JDInputForm onSubmit={onSubmit} onSkip={onSkip} initialJD={initialJD} onChangeJD={onChangeJD} />
         </CardContent>
       </Card>
     </StepWrapper>
