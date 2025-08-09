@@ -69,13 +69,13 @@ export function buildResumePrompt(
 - Output must conform EXACTLY to the provided JSON schema fields. Do not add or rename fields. Do not include markdown.
 - Respect these constraints:
   • Sections order: Summary, Technical Skills, Experience, Projects, Education, Certifications.
-  • Experience: maximum 3 entries. Each entry’s responsibilities must be 3–5 bullet points; each bullet starts with an action verb and includes a measurable result when possible. Keep each bullet concise (≤ 20 words when feasible).
+  • Experience: maximum 3 entries. Each entry's responsibilities must be 3-5 bullet points; each bullet starts with an action verb and includes a measurable result when possible. Keep each bullet concise (≤ 20 words when feasible).
   • Projects: maximum 3 entries, emphasizing impact and relevance to the target role.
-  • Professional summary: 3–5 sentences tailored to the role${hasJD ? ' (and JD)' : ''}.
+  • Professional summary: 3-5 sentences tailored to the role${hasJD ? ' (and JD)' : ''}.
   • Technical skills: populate the provided categories (languages, frameworks, development_tools, libraries). Ensure the most relevant skills are included.
   • Social links: if LinkedIn or GitHub URLs are present, extract and return only the username (e.g., "linkedin": "username", "github": "username"). If absent, omit these fields.
   • Contact: ensure valid formatting for email and international-friendly phone formatting when present.
-  • Education/Certifications: use only what’s provided in the input; do not fabricate. If not provided, leave empty or omit optional fields per schema.`
+  • Education/Certifications: use only what's provided in the input; do not fabricate. If not provided, leave empty or omit optional fields per schema.`
   );
 
   sections.push(
