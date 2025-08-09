@@ -55,7 +55,7 @@ export function buildResumePrompt(
     goals.push('1) Optimize for common target roles using industry-relevant vocabulary.');
   }
   if (hasUpdates) {
-    goals.push('2) Apply the user’s requested updates faithfully.');
+    goals.push('2) Apply the user\'s requested updates faithfully.');
   }
   goals.push(
     '3) Convert experience into results-driven bullet points using Action → Task → Result, quantifying with numbers, % or $.',
