@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { google } from '@ai-sdk/google';
 import { generateObject } from 'ai';
 import { ResumeContentSchema } from '@/schema/resume';
+import { buildResumePrompt } from '@/lib/prompt-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,28 +10,7 @@ export async function POST(request: NextRequest) {
     
   
 
-    // Create the prompt for resume generation
-    let prompt = `Create a professional resume based on the following information:\n${content}`;
-    
-    if (updates) {
-      prompt += `\nPlease make the following updates to the resume:\n${updates}`;
-    }
-    
-    if (jobDescription) {
-      prompt += `\nTailor this resume specifically for the following job description and ensure to keep the resume relevant to the job description:\n${jobDescription}`;
-    }
-
-                    prompt += `\nGenerate a well-structured, professional resume with the following requirements:
-            - Extract and organize all information into the provided schema
-            - Focus on achievements and quantifiable results
-            - Make it ATS-friendly with clear section headers
-            - Ensure all contact information is properly formatted
-            - Include relevant skills and technologies
-            - Add any certifications if mentioned in the input
-            - Create a compelling professional summary (2-3 sentences)
-            - Limit experience and projects to maximum 3 entries each
-            - Order sections as: Summary, Technical Skills, Experience, Projects, Education, Certifications
-            - Extract LinkedIn and GitHub profiles if mentioned in the input (just the username, not full URL)`;
+    const prompt = buildResumePrompt(content, updates, jobDescription);
 
     const result = await generateObject({
       model: google('gemini-2.0-flash-exp'),
