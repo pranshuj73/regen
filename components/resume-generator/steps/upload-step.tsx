@@ -19,6 +19,9 @@ export function UploadStep({ onFileUpload, onPasteResume }: UploadStepProps) {
           <CardDescription>
             Upload your existing resume to get started
           </CardDescription>
+          <div className="text-xs text-amber-500 bg-amber-50 dark:bg-amber-950/20 p-2 rounded">
+            <strong>Note:</strong> PDF parsing extracts text only. URLs and links may need to be added manually in the next step.
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <button 
