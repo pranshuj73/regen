@@ -1,8 +1,8 @@
-import { ResumeSchema } from '@/schema/resume';
+import { ResumeSchemaType } from '@/schema/resume';
 import { Phone, Mail, Linkedin, Github } from 'lucide-react';
 
 interface ResumeComponentProps {
-  data: ResumeSchema;
+  data: ResumeSchemaType;
 }
 
 export function ResumeComponent({ data }: ResumeComponentProps) {
@@ -63,13 +63,26 @@ export function ResumeComponent({ data }: ResumeComponentProps) {
       )}
       
       {/* TECHNICAL SKILLS */}
-      <div className="mb-4">
-        <h2 className="text-sm font-bold border-b border-black pb-1 mb-2 uppercase">TECHNICAL SKILLS</h2>
-        <p className="text-xs mb-1"><strong>Languages:</strong> {data.technical_skills.languages.join(', ')}</p>
-        <p className="text-xs mb-1"><strong>Frameworks:</strong> {data.technical_skills.frameworks.join(', ')}</p>
-        <p className="text-xs mb-1"><strong>Development Tools:</strong> {data.technical_skills.development_tools.join(', ')}</p>
-        <p className="text-xs mb-1"><strong>Libraries:</strong> {data.technical_skills.libraries.join(', ')}</p>
-      </div>
+      {(data.technical_skills.languages.length > 0 || 
+        data.technical_skills.frameworks.length > 0 || 
+        data.technical_skills.development_tools.length > 0 || 
+        data.technical_skills.libraries.length > 0) && (
+        <div className="mb-4">
+          <h2 className="text-sm font-bold border-b border-black pb-1 mb-2 uppercase">TECHNICAL SKILLS</h2>
+          {data.technical_skills.languages.length > 0 && (
+            <p className="text-xs mb-1"><strong>Languages:</strong> {data.technical_skills.languages.join(', ')}</p>
+          )}
+          {data.technical_skills.frameworks.length > 0 && (
+            <p className="text-xs mb-1"><strong>Frameworks:</strong> {data.technical_skills.frameworks.join(', ')}</p>
+          )}
+          {data.technical_skills.development_tools.length > 0 && (
+            <p className="text-xs mb-1"><strong>Development Tools:</strong> {data.technical_skills.development_tools.join(', ')}</p>
+          )}
+          {data.technical_skills.libraries.length > 0 && (
+            <p className="text-xs mb-1"><strong>Libraries:</strong> {data.technical_skills.libraries.join(', ')}</p>
+          )}
+        </div>
+      )}
       
       {/* EXPERIENCE */}
       <div className="mb-4">
@@ -101,11 +114,26 @@ export function ResumeComponent({ data }: ResumeComponentProps) {
           <h2 className="text-sm font-bold border-b border-black pb-1 mb-2 uppercase">PROJECTS</h2>
           {data.projects.map((project, index) => (
             <div key={index} className="mb-3">
-              <div>
-                <h3 className="text-xs font-bold">{project.title}</h3>
-                <p className="text-xs text-gray-600 mb-1">
-                  <strong>Technologies:</strong> {project.technologies.join(', ')}
-                </p>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="text-xs font-bold">
+                    {project.url ? (
+                      <a href={project.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                        {project.title}
+                      </a>
+                    ) : (
+                      project.title
+                    )}
+                  </h3>
+                  <p className="text-xs text-gray-600 mb-1">
+                    <strong>Technologies:</strong> {project.technologies.join(', ')}
+                  </p>
+                </div>
+                {project.year && (
+                  <div className="text-right text-xs text-gray-600">
+                    <p>{project.year}</p>
+                  </div>
+                )}
               </div>
               <p className="text-xs leading-relaxed">{project.description}</p>
             </div>

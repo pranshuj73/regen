@@ -6,14 +6,14 @@ export const ResumeSchema = z.object({
   email: z.string().describe("Valid email address (e.g., user@example.com)"),
   phone: z.string().describe("Phone number in international format (e.g., +1 555-123-4567)"),
   address: z.string().describe("Full address or city, state"),
-  linkedin: z.string().optional().describe("Full LinkedIn profile URL (e.g., https://linkedin.com/in/username)"),
-  github: z.string().optional().describe("Full GitHub profile URL (e.g., https://github.com/username)"),
+  linkedin: z.string().optional().describe("LinkedIn username only (e.g., username)"),
+  github: z.string().optional().describe("GitHub username only (e.g., username)"),
   summary: z.string().describe("Professional summary in 1-2 sentences"),
   technical_skills: z.object({
-    languages: z.array(z.string()).describe("Programming languages (e.g., JavaScript, Python, Java)"),
-    frameworks: z.array(z.string()).describe("Frameworks and libraries relevant to the job (e.g., React, Pandas, PyTorch)"),
-    development_tools: z.array(z.string()).describe("Development tools and platforms (e.g., Git, Docker, AWS)"),
-    libraries: z.array(z.string()).describe("Additional libraries and technologies (e.g., Express.js, MongoDB)")
+    languages: z.array(z.string()).describe("Programming languages (e.g., Python, Java, JavaScript, C++)"),
+    frameworks: z.array(z.string()).describe("Frameworks and libraries (e.g., React, Django, Spring, TensorFlow)"),
+    development_tools: z.array(z.string()).describe("Development tools and platforms (e.g., Git, Docker, VS Code, Jupyter)"),
+    libraries: z.array(z.string()).describe("Additional libraries and technologies (e.g., Pandas, NumPy, REST APIs)")
   }).describe("Technical skills organized by category"),
   experience: z.array(
     z.object({
@@ -28,7 +28,9 @@ export const ResumeSchema = z.object({
     z.object({
       title: z.string().describe("Project name"),
       description: z.string().describe("Brief project description"),
-      technologies: z.array(z.string()).describe("Technologies used in the project")
+      technologies: z.array(z.string()).describe("Technologies used in the project"),
+      url: z.string().optional().describe("URL of the project"),
+      year: z.string().optional().describe("Year of the project")
     })
   ).max(3).describe("Project entries (maximum 3)"),
   education: z.array(
@@ -42,4 +44,4 @@ export const ResumeSchema = z.object({
   certifications: z.array(z.string()).optional().describe("Professional certifications and licenses")
 });
 
-export type ResumeContent = z.infer<typeof ResumeSchema>;
+export type ResumeSchemaType = z.infer<typeof ResumeSchema>;

@@ -10,6 +10,8 @@ export async function POST(request: NextRequest) {
     
     // Parse the PDF
     const result = await pdf(buffer);
+    console.log("EXTRACTED TEXT:")
+    console.log(result.text);
     
     return NextResponse.json({ 
       text: result.text,

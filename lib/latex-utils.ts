@@ -1,6 +1,6 @@
-import { ResumeContent } from '@/schema/resume';
+import { ResumeSchemaType } from '@/schema/resume';
 
-export function generateLatexResume(data: ResumeContent): string {
+export function generateLatexResume(data: ResumeSchemaType): string {
   console.log('Generating LaTeX for data:', data);
   
   const escapeLatex = (text: string): string => {
@@ -20,33 +20,19 @@ export function generateLatexResume(data: ResumeContent): string {
     return phone;
   };
 
-  const formatSocialLink = (url: string, platform: string): string => {
-    if (!url) return '';
+  const formatSocialLink = (username: string, platform: string): string => {
+    if (!username) return '';
     
-    // Ensure URL has proper protocol
-    let fullUrl = url;
-    if (!url.startsWith('https://') && !url.startsWith('http://')) {
-      fullUrl = `https://${url}`;
-    }
-    
-    // Validate URL format
-    if (platform === 'linkedin' && !fullUrl.includes('linkedin.com/in/')) {
-      console.log(`Invalid LinkedIn URL: ${url}`);
-      return '';
-    }
-    if (platform === 'github' && !fullUrl.includes('github.com/')) {
-      console.log(`Invalid GitHub URL: ${url}`);
-      return '';
-    }
-    
-    // Extract display text (username part)
+    // Construct full URL from username
+    let fullUrl = '';
     let displayText = '';
+    
     if (platform === 'linkedin') {
-      const match = fullUrl.match(/linkedin\.com\/in\/([^\/\?#]+)/);
-      displayText = match ? `linkedin.com/in/${match[1]}` : fullUrl;
+      fullUrl = `https://linkedin.com/in/${username}`;
+      displayText = `linkedin.com/in/${username}`;
     } else if (platform === 'github') {
-      const match = fullUrl.match(/github\.com\/([^\/\?#]+)/);
-      displayText = match ? `github.com/${match[1]}` : fullUrl;
+      fullUrl = `https://github.com/${username}`;
+      displayText = `github.com/${username}`;
     }
     
     return `\\href{${fullUrl}}{\\underline{${displayText}}}`;
@@ -56,16 +42,24 @@ export function generateLatexResume(data: ResumeContent): string {
     const skillLines: string[] = [];
     
     if (skills.languages?.length) {
-      skillLines.push(`\\textbf{Languages}{: ${skills.languages.join(', ')}`);
+      skillLines.push(`\\textbf{Languages}{: ${skills.languages.join(', ')} }`);
+    } else {
+      skillLines.push(`\\textbf{Languages}{: }`);
     }
     if (skills.frameworks?.length) {
-      skillLines.push(`\\textbf{Frontend}{: ${skills.frameworks.join(', ')}`);
+      skillLines.push(`\\textbf{Frameworks}{: ${skills.frameworks.join(', ')} }`);
+    } else {
+      skillLines.push(`\\textbf{Frameworks}{: }`);
     }
     if (skills.development_tools?.length) {
-      skillLines.push(`\\textbf{Tools}{: ${skills.development_tools.join(', ')}`);
+      skillLines.push(`\\textbf{Development Tools}{: ${skills.development_tools.join(', ')} }`);
+    } else {
+      skillLines.push(`\\textbf{Development Tools}{: }`);
     }
     if (skills.libraries?.length) {
-      skillLines.push(`\\textbf{Libraries}{: ${skills.libraries.join(', ')}`);
+      skillLines.push(`\\textbf{Libraries}{: ${skills.libraries.join(', ')} }`);
+    } else {
+      skillLines.push(`\\textbf{Libraries}{: }`);
     }
     
     return skillLines.join(' \\\\ ');
@@ -76,14 +70,14 @@ export function generateLatexResume(data: ResumeContent): string {
     
     return experience.map(exp => {
       const responsibilities = exp.responsibilities?.map((resp: string) => 
-        `\\resumeItem{${escapeLatex(resp)}}`
-      ).join('\n        ') || '';
+        `        \\resumeItem{${escapeLatex(resp)}}`
+      ).join('\n') || '';
       
       return `    \\resumeSubheading
       {${escapeLatex(exp.position)}}{${escapeLatex(exp.duration)}}
       {${escapeLatex(exp.organization)}}{${escapeLatex(exp.location)}}
       \\resumeItemListStart
-        ${responsibilities}
+${responsibilities}
       \\resumeItemListEnd`;
     }).join('\n\n');
   };
@@ -93,8 +87,16 @@ export function generateLatexResume(data: ResumeContent): string {
     
     return projects.map(project => {
       const technologies = project.technologies?.join(', ') || '';
+      const projectYear = project.year || new Date().getFullYear().toString();
+      
+      // Format project title with URL if available
+      let projectTitle = escapeLatex(project.title);
+      if (project.url) {
+        projectTitle = `\\href{${project.url}}{\\underline{\\textbf{${escapeLatex(project.title)}}}}`;
+      }
+      
       return `      \\resumeProjectHeading
-          {${escapeLatex(project.title)}} ${technologies ? `$|$ \\emph{${escapeLatex(technologies)}}` : ''}
+          { ${projectTitle} ${technologies ? `$|$ \\emph{${escapeLatex(technologies)}}` : ''}}{${projectYear}}
           \\resumeItemListStart
             \\resumeItem{${escapeLatex(project.description)}}
           \\resumeItemListEnd`;
@@ -235,14 +237,14 @@ export function generateLatexResume(data: ResumeContent): string {
 
 
 %-------------ABOUT SECTION--------------
-\\section{${escapeLatex(data.summary.split('.')[0] || 'PROFESSIONAL SUMMARY')}}
+\\section{SUMMARY}
 \\begin{itemize}[leftmargin=0.15in, label={}]
     \\small{\\item{${escapeLatex(data.summary)}}}
 \\end{itemize}
 
 
 %-----------PROGRAMMING SKILLS-----------
-\\section{Technical Skills}
+\\section{TECHNICAL SKILLS}
  \\begin{itemize}[leftmargin=0.15in, label={}]
     \\small{\\item{
      ${formatSkills(data.technical_skills)}
@@ -252,7 +254,7 @@ export function generateLatexResume(data: ResumeContent): string {
 
 %-------------------------------------------
 %-----------EXPERIENCE-----------
-\\section{Experience}
+\\section{EXPERIENCE}
   \\resumeSubHeadingListStart
 
 ${formatExperience(data.experience)}
@@ -260,24 +262,22 @@ ${formatExperience(data.experience)}
   \\resumeSubHeadingListEnd
 
 
-
 %-----------PROJECTS-----------
-\\section{Projects}
+\\section{PROJECTS}
     \\resumeSubHeadingListStart
 ${formatProjects(data.projects)}
     \\resumeSubHeadingListEnd
 
 
-
 %-----------EDUCATION-----------
-\\section{Education}
+\\section{EDUCATION}
   \\resumeSubHeadingListStart
 ${formatEducation(data.education)}
   \\resumeSubHeadingListEnd
 
 ${data.certifications && data.certifications.length > 0 ? `
 %-----------CERTIFICATIONS-----------
-\\section{Certifications}
+\\section{CERTIFICATIONS}
   \\resumeSubHeadingListStart
     ${data.certifications.map(cert => `\\item ${escapeLatex(cert)}`).join('\n    ')}
   \\resumeSubHeadingListEnd

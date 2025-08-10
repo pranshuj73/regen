@@ -21,7 +21,7 @@ export const generateResumeHTML = (data: any) => {
       <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px;">
         <h1 style="color: #333; margin: 0;">${data.name || 'Your Name'}</h1>
         <p style="color: #666; margin: 5px 0;">${data.title || 'Professional Title'}</p>
-        <p style="color: #666; margin: 5px 0;">${data.email || 'email@example.com'} | ${data.phone || '(555) 123-4567'}</p>
+        <p style="color: #666; margin: 5px 0;">${data.email || 'email@example.com'} | ${data.phone || '+1 (555)-123-4567'}</p>
       </div>
       
       ${data.summary ? `

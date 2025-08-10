@@ -3,6 +3,7 @@ import { google } from '@ai-sdk/google';
 import { generateObject } from 'ai';
 import { ResumeSchema } from '@/schema/resume';
 import { buildResumePrompt } from '@/lib/prompt-utils';
+import { extractUsername } from '@/lib/social-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,6 +18,14 @@ export async function POST(request: NextRequest) {
     });
 
     const resumeData = result.object;
+
+    // Clean up social media usernames - extract usernames from URLs if needed
+    if (resumeData.linkedin) {
+      resumeData.linkedin = extractUsername(resumeData.linkedin, 'linkedin');
+    }
+    if (resumeData.github) {
+      resumeData.github = extractUsername(resumeData.github, 'github');
+    }
 
     return NextResponse.json({ 
       data: resumeData,
