@@ -71,10 +71,10 @@ export function buildResumePrompt(
   • Sections order: Summary, Technical Skills, Experience, Projects, Education, Certifications.
   • Experience: maximum 3 entries. Each entry's responsibilities must be 3-5 bullet points; each bullet starts with an action verb and includes a measurable result when possible. Keep each bullet concise (≤ 20 words when feasible).
   • Projects: maximum 3 entries, emphasizing impact and relevance to the target role.
-  • Professional summary: 3-5 sentences tailored to the role${hasJD ? ' (and JD)' : ''}.
+  • Professional summary: 1-2 sentences tailored to the role${hasJD ? ' (and JD)' : ''}.
   • Technical skills: populate the provided categories (languages, frameworks, development_tools, libraries). Ensure the most relevant skills are included.
-  • Social links: if LinkedIn or GitHub URLs are present, extract and return only the username (e.g., "linkedin": "username", "github": "username"). If absent, omit these fields.
-  • Contact: ensure valid formatting for email and international-friendly phone formatting when present.
+  • Social links: if LinkedIn or GitHub URLs are present, provide full URLs (e.g., "linkedin": "https://linkedin.com/in/username", "github": "https://github.com/username"). Always use complete URLs, not just usernames. If absent, omit these fields.
+  • Contact: ensure valid email format (user@domain.com) and international phone format (+1 555-123-4567) when present.
   • Education/Certifications: use only what's provided in the input; do not fabricate. If not provided, leave empty or omit optional fields per schema.`
   );
 

@@ -1,20 +1,21 @@
 // Layout components
-export { default as ResumeGeneratorWrapper } from './layout/resume-generator-wrapper';
-export { default as StepWrapper } from './layout/step-wrapper';
+export { ResumeGeneratorWrapper } from './layout/resume-generator-wrapper';
+export { StepWrapper } from './layout/step-wrapper';
 
 // Step components
-export { default as MenuStep } from './steps/menu-step';
-export { default as UploadStep } from './steps/upload-step';
-export { default as PasteStep } from './steps/paste-step';
-export { default as UpdatesStep } from './steps/updates-step';
-export { default as JDStep } from './steps/jd-step';
-export { default as PreviewStep } from './steps/preview-step';
-export { default as ManualStep } from './steps/manual-step';
+export { MenuStep } from './steps/menu-step';
+export { UploadStep } from './steps/upload-step';
+export { PasteStep } from './steps/paste-step';
+export { UpdatesStep } from './steps/updates-step';
+export { JDStep } from './steps/jd-step';
+export { PreviewStep } from './steps/preview-step';
+export { ManualStep } from './steps/manual-step';
 
 // Form components
-export { default as ManualInputForm } from './forms/manual-input-form';
-export { default as JDInputForm } from './forms/jd-input-form';
+export { ManualInputForm } from './forms/manual-input-form';
+export { JDInputForm } from './forms/jd-input-form';
 
 // Resume components
-export { default as ResumeComponent } from './resume/resume-component';
-export { default as PrintResume } from './resume/print-resume'; 
+export { ResumeComponent } from './resume/resume-component';
+export { PrintResume } from './resume/print-resume';
+export { LatexViewer } from './resume/latex-viewer'; 

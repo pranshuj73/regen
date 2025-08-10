@@ -1,11 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Eye, Sparkles } from 'lucide-react';
+import { Download, Eye, Sparkles, FileText } from 'lucide-react';
 import { StepWrapper } from '../layout/step-wrapper';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useResumePrint } from '@/lib/pdf-utils';
 import { ResumeComponent } from '../resume/resume-component';
 import { PrintResume } from '../resume/print-resume';
+import { LatexViewer } from '../resume/latex-viewer';
 
 interface PreviewStepProps {
   isGenerating: boolean;
@@ -17,11 +18,17 @@ interface PreviewStepProps {
 export function PreviewStep({ isGenerating, generatedResume, onDownload, onGenerateNew }: PreviewStepProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const handlePrint = useResumePrint(contentRef);
+  const [showLatex, setShowLatex] = useState(false);
 
   return (
     <>
       {/* Print-only resume component */}
       {generatedResume && <PrintResume data={generatedResume} />}
+      
+      {/* LaTeX Viewer Modal */}
+      {showLatex && generatedResume && (
+        <LatexViewer data={generatedResume} onClose={() => setShowLatex(false)} />
+      )}
       
       {/* Main UI - hidden when printing */}
       <div className="print:hidden">
@@ -40,6 +47,14 @@ export function PreviewStep({ isGenerating, generatedResume, onDownload, onGener
                     <Button onClick={handlePrint} className="flex items-center space-x-2 cursor-pointer">
                       <Download className="h-4 w-4" />
                       Print Resume
+                    </Button>
+                    <Button
+                      onClick={() => setShowLatex(true)}
+                      variant="outline"
+                      className="flex items-center space-x-2 cursor-pointer"
+                    >
+                      <FileText className="h-4 w-4" />
+                      View LaTeX
                     </Button>
                     <Button
                       onClick={onGenerateNew}

@@ -1,8 +1,8 @@
-import { ResumeContent } from '@/schema/resume';
+import { ResumeSchema } from '@/schema/resume';
 import { Phone, Mail, Linkedin, Github } from 'lucide-react';
 
 interface ResumeComponentProps {
-  data: ResumeContent;
+  data: ResumeSchema;
 }
 
 export function ResumeComponent({ data }: ResumeComponentProps) {

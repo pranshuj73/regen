@@ -14,10 +14,10 @@ export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
       <Card className="w-full h-full py-16">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold text-white mb-2">
-            Resume Generator
+            Regen - Resume Generator
           </CardTitle>
-          <CardDescription className="text-lg text-gray-400">
-            Create a professional resume tailored to your needs
+          <CardDescription className="text-lg text-gray-400 max-w-lg mx-auto">
+            Upload your resume → Give us a job description → Get a tailored PDF resume in seconds.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -42,6 +42,7 @@ export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
               <span className="text-sm text-gray-500">Paste your resume content</span>
             </Button>
           </div>
+          <p className="text-xs text-center text-gray-500 mt-10 -mb-10">NB: We don't save any of your details, there's no auth, there's no db.<br/>Please make sure to download the generated resume or it'll be lost to the void.</p>
         </CardContent>
       </Card>
     </StepWrapper>
