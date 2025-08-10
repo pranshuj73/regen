@@ -39,17 +39,13 @@ export default function Home() {
 
   const currentStep = navState.history[navState.history.length - 1];
 
-  // DEBUG LOGGING REMOVED
-
-
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = async (e) => {
         const arrayBuffer = e.target?.result as ArrayBuffer;
-        
+
         if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
           // Handle PDF files
           try {
@@ -61,7 +57,7 @@ export default function Home() {
                 data: Array.from(new Uint8Array(arrayBuffer))
               }),
             });
-            
+
             if (response.ok) {
               const result = await response.json();
               setNavState(prev => ({
@@ -150,7 +146,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      
+
       if (response.ok) {
         const result = await response.json();
         setGeneratedResume(result.data);
@@ -191,103 +187,71 @@ export default function Home() {
   const canGoBack = navState.history.length > 1;
 
   return (
-    <div className="print:hidden">
-      <ResumeGeneratorWrapper>
+    <ResumeGeneratorWrapper>
+      <StepWrapper
+        showBackButton={canGoBack}
+        onBack={goBack}
+      >
         {(() => {
-        switch (currentStep) {
-          case 'menu':
-            return (
-              <StepWrapper 
-                showBackButton={canGoBack} 
-                onBack={goBack}
-              >
+          switch (currentStep) {
+            case 'menu':
+              return (
                 <MenuStep
                   onUpload={() => navigateTo('upload')}
                   onPaste={() => navigateTo('paste')}
                 />
-              </StepWrapper>
-            );
-          case 'upload':
-            return (
-              <StepWrapper 
-                showBackButton={canGoBack} 
-                onBack={goBack}
-              >
+              );
+            case 'upload':
+              return (
                 <UploadStep
                   onFileUpload={handleFileUpload}
                   onPasteResume={() => navigateTo('paste')}
                 />
-              </StepWrapper>
-            );
-          case 'paste':
-            return (
-              <StepWrapper 
-                showBackButton={canGoBack} 
-                onBack={goBack}
-              >
+              );
+            case 'paste':
+              return (
                 <PasteStep
                   onSubmit={handlePasteInput}
                   onUploadResume={() => navigateTo('upload')}
                 />
-              </StepWrapper>
-            );
-          case 'updates':
-            return (
-              <StepWrapper 
-                showBackButton={canGoBack} 
-                onBack={goBack}
-              >
+              );
+            case 'updates':
+              return (
                 <UpdatesStep
                   onSubmit={handleUpdatesSubmit}
                   onSubmitWithMeta={handleUpdatesPersist}
                   initialSelectedIds={navState.pageState?.updates?.selectedIds}
                   initialCustomUpdates={navState.pageState?.updates?.customUpdates}
                 />
-              </StepWrapper>
-            );
-          case 'jd':
-            return (
-              <StepWrapper 
-                showBackButton={canGoBack} 
-                onBack={goBack}
-              >
+              );
+            case 'jd':
+              return (
                 <JDStep
                   onSubmit={handleJDSubmit}
                   onSkip={() => generateResume()}
                   initialJD={navState.pageState?.jd?.text}
                   onChangeJD={handleJDChange}
                 />
-              </StepWrapper>
-            );
-          case 'preview':
-            return (
-              <StepWrapper 
-                showBackButton={canGoBack} 
-                onBack={goBack}
-              >
+              );
+            case 'preview':
+              return (
                 <PreviewStep
                   isGenerating={isGenerating}
                   generatedResume={generatedResume}
-                  onDownload={() => {}}
+                  onDownload={() => { }}
                   onGenerateNew={handleGenerateNew}
                 />
-              </StepWrapper>
-            );
-          default:
-            return (
-              <StepWrapper 
-                showBackButton={canGoBack} 
-                onBack={goBack}
-              >
+              );
+            default:
+              return (
                 <MenuStep
                   onUpload={() => navigateTo('upload')}
                   onPaste={() => navigateTo('paste')}
                 />
-              </StepWrapper>
-            );
-        }
-      })()}
-      </ResumeGeneratorWrapper>
-    </div>
+              );
+          }
+        })()}
+      </StepWrapper>
+    </ResumeGeneratorWrapper>
   );
 }

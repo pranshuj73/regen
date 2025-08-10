@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, FileText } from 'lucide-react';
-import { StepWrapper } from './step-wrapper';
+import { StepWrapper } from '../layout/step-wrapper';
 
 interface MenuStepProps {
   onUpload: () => void;

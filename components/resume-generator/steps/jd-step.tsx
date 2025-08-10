@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { JDInputForm } from './jd-input-form';
-import { StepWrapper } from './step-wrapper';
+import { JDInputForm } from '../forms/jd-input-form';
+import { StepWrapper } from '../layout/step-wrapper';
 
 interface JDStepProps {
   onSubmit: (jd: string) => void;

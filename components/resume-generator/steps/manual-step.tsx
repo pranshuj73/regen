@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ManualInputForm } from './manual-input-form';
-import { StepWrapper } from './step-wrapper';
+import { ManualInputForm } from '../forms/manual-input-form';
+import { StepWrapper } from '../layout/step-wrapper';
 
 interface ManualStepProps {
   onSubmit: (content: string) => void;

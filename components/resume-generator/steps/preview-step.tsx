@@ -1,11 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Eye, Sparkles } from 'lucide-react';
-import { StepWrapper } from './step-wrapper';
+import { StepWrapper } from '../layout/step-wrapper';
 import { useRef } from 'react';
 import { useResumePrint } from '@/lib/pdf-utils';
-import { ResumeComponent } from './resume-component';
-import { PrintResume } from './print-resume';
+import { ResumeComponent } from '../resume/resume-component';
+import { PrintResume } from '../resume/print-resume';
 
 interface PreviewStepProps {
   isGenerating: boolean;
