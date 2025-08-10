@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Copy, Check, X } from 'lucide-react';
 import { generateLatexResume } from '@/lib/latex-utils';
-import { ResumeContent } from '@/schema/resume';
+import { ResumeSchemaType } from '@/schema/resume';
 
 interface LatexViewerProps {
-  data: ResumeContent;
+  data: ResumeSchemaType;
   onClose: () => void;
 }
 
