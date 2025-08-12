@@ -36,7 +36,7 @@ export function PreviewStep({ isGenerating, generatedResume, onDownload, onGener
           <div className="w-full h-full">
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
+                <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-4">
                   <div>
                     <CardTitle>Generated Resume</CardTitle>
                     <CardDescription>
