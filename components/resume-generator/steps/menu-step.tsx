@@ -12,11 +12,11 @@ export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
   return (
     <StepWrapper>
       <Card className="w-full h-full py-16">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-white mb-2">
-            Regen - Resume Generator
+        <CardHeader className="text-center mb-4">
+          <CardTitle className="text-6xl font-bold text-white mb-2 mono">
+            REGEN
           </CardTitle>
-          <CardDescription className="text-lg text-gray-400 max-w-lg mx-auto">
+          <CardDescription className="text-gray-400 mx-auto">
             Upload your resume → Give us a job description → Get a tailored PDF resume in seconds.
           </CardDescription>
         </CardHeader>
