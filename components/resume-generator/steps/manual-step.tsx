@@ -10,25 +10,23 @@ interface ManualStepProps {
 
 export function ManualStep({ onSubmit, onBack }: ManualStepProps) {
   return (
-    <StepWrapper>
-      <Card className="w-full h-full">
-        <CardHeader>
-          <CardTitle>Enter Your Details</CardTitle>
-          <CardDescription>
-            Provide your information to generate a resume
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <ManualInputForm onSubmit={onSubmit} />
-          <Button
-            onClick={onBack}
-            variant="outline"
-            className="w-full"
-          >
-            Back to Menu
-          </Button>
-        </CardContent>
-      </Card>
-    </StepWrapper>
+    <Card className="w-full h-full">
+      <CardHeader>
+        <CardTitle>Enter Your Details</CardTitle>
+        <CardDescription>
+          Provide your information to generate a resume
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <ManualInputForm onSubmit={onSubmit} />
+        <Button
+          onClick={onBack}
+          variant="outline"
+          className="w-full"
+        >
+          Back to Menu
+        </Button>
+      </CardContent>
+    </Card>
   );
-} 
+}

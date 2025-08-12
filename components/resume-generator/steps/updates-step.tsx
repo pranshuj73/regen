@@ -85,61 +85,59 @@ export function UpdatesStep({ onSubmit, onSubmitWithMeta, initialSelectedIds, in
   };
 
   return (
-    <StepWrapper>
-      <Card className="w-full h-full">
-        <CardHeader>
-          <CardTitle>What updates would you like to make?</CardTitle>
-          <CardDescription>
-            Select common updates or describe your specific requirements
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Common Updates</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {commonUpdates.map((update) => (
-                <div
-                  key={update.id} 
-                  className="flex text-left items-start space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-800"
-                  onClick={() => handleUpdateToggle(update.id)}
-                >
-                  <Checkbox
-                    id={update.id}
-                    checked={selectedUpdates.includes(update.id)}
-                    className="pointer-events-none"
-                  />
-                  <div className="space-y-1">
-                    <Label 
-                      htmlFor={update.id} 
-                      className="text-sm font-medium leading-none cursor-pointer"
-                    >
-                      {update.label}
-                    </Label>
-                    <p className="text-xs text-gray-500">{update.description}</p>
-                  </div>
+    <Card className="w-full h-full">
+      <CardHeader>
+        <CardTitle>What updates would you like to make?</CardTitle>
+        <CardDescription>
+          Select common updates or describe your specific requirements
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-4">
+          <Label className="text-base font-semibold">Common Updates</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {commonUpdates.map((update) => (
+              <div
+                key={update.id} 
+                className="flex text-left items-start space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-800"
+                onClick={() => handleUpdateToggle(update.id)}
+              >
+                <Checkbox
+                  id={update.id}
+                  checked={selectedUpdates.includes(update.id)}
+                  className="pointer-events-none"
+                />
+                <div className="space-y-1">
+                  <Label 
+                    htmlFor={update.id} 
+                    className="text-sm font-medium leading-none cursor-pointer"
+                  >
+                    {update.label}
+                  </Label>
+                  <p className="text-xs text-gray-500">{update.description}</p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="custom-updates" className="mb-2">Additional Requirements (Optional)</Label>
+            <Textarea
+              id="custom-updates"
+              value={customUpdates}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCustomUpdates(e.target.value)}
+              rows={4}
+              placeholder="Describe any specific changes you'd like to make to your resume..."
+            />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="custom-updates" className="mb-2">Additional Requirements (Optional)</Label>
-              <Textarea
-                id="custom-updates"
-                value={customUpdates}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCustomUpdates(e.target.value)}
-                rows={4}
-                placeholder="Describe any specific changes you'd like to make to your resume..."
-              />
-            </div>
-
-            <Button type="submit" className="w-full cursor-pointer">
-              Continue to Job Description
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </StepWrapper>
+          <Button type="submit" className="w-full cursor-pointer">
+            Continue to Job Description
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 } 

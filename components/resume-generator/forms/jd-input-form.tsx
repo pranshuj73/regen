@@ -35,8 +35,8 @@ export function JDInputForm({ onSubmit, onSkip, initialJD, onChangeJD }: JDInput
         />
       </div>
       
-      <div className="flex space-x-2">
-        <Button type="submit" className="flex-1 cursor-pointer">
+      <div className="flex flex-wrap gap-2">
+        <Button disabled={!jobDescription.trim()} type="submit" className="flex-1 cursor-pointer">
           Generate Tailored Resume
         </Button>
         <Button type="button" onClick={onSkip} variant="outline" className="flex-1 cursor-pointer">

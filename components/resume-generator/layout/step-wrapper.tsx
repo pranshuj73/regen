@@ -15,10 +15,10 @@ export function StepWrapper({
   
 }: StepWrapperProps) {
   return (
-    <div className="w-full max-w-4xl">
+    <div className="w-full max-w-full md:max-w-5xl lg:max-w-4xl">
       {/* Navigation Bar */}
       {showBackButton && (
-        <div className="flex justify-between items-center mb-4 px-4">
+        <div className="flex justify-between items-center mb-4">
           <div className="flex gap-2">
             {showBackButton && onBack && (
               <Button
@@ -36,7 +36,7 @@ export function StepWrapper({
       )}
       
       {/* Content */}
-      <div className="flex flex-col justify-center p-4">
+      <div className="flex flex-col justify-center">
         {children}
       </div>
     </div>

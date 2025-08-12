@@ -11,7 +11,6 @@ interface JDStepProps {
 
 export function JDStep({ onSubmit, onSkip, initialJD, onChangeJD }: JDStepProps) {
   return (
-    <StepWrapper>
       <Card className="w-full h-full">
         <CardHeader>
           <CardTitle>Job Description (Optional)</CardTitle>
@@ -23,6 +22,5 @@ export function JDStep({ onSubmit, onSkip, initialJD, onChangeJD }: JDStepProps)
           <JDInputForm onSubmit={onSubmit} onSkip={onSkip} initialJD={initialJD} onChangeJD={onChangeJD} />
         </CardContent>
       </Card>
-    </StepWrapper>
   );
-} 
+}
