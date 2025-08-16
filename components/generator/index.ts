@@ -3,13 +3,12 @@ export { ResumeGeneratorWrapper } from './layout/resume-generator-wrapper';
 export { StepWrapper } from './layout/step-wrapper';
 
 // Step components
-export { MenuStep } from './steps/menu-step';
-export { UploadStep } from './steps/upload-step';
-export { PasteStep } from './steps/paste-step';
-export { UpdatesStep } from './steps/updates-step';
-export { JDStep } from './steps/jd-step';
-export { PreviewStep } from './steps/preview-step';
-export { ManualStep } from './steps/manual-step';
+export { MenuStep } from './steps/menu';
+export { UploadStep } from './steps/upload';
+export { PasteStep } from './steps/paste';
+export { UpdatesStep } from './steps/updates';
+export { JDStep } from './steps/jd';
+export { PreviewStep } from './steps/preview';
 
 // Form components
 export { ManualInputForm } from './forms/manual-input-form';

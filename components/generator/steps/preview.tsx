@@ -1,7 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Eye, Sparkles, FileText } from 'lucide-react';
-import { StepWrapper } from '../layout/step-wrapper';
 import { useRef, useState } from 'react';
 import { useResumePrint } from '@/lib/pdf-utils';
 import { ResumeComponent } from '../resume/resume-component';

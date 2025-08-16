@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { StepWrapper } from '../layout/step-wrapper';
 import { ManualInputForm } from '../forms/manual-input-form';
 
 interface PasteStepProps {

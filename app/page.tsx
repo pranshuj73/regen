@@ -10,7 +10,7 @@ import {
   PreviewStep,
   ResumeGeneratorWrapper,
   StepWrapper
-} from '@/components/resume-generator';
+} from '@/components/generator';
 
 type Step = 'menu' | 'upload' | 'paste' | 'updates' | 'jd' | 'preview';
 
