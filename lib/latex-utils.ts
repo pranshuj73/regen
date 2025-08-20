@@ -1,124 +1,144 @@
-import { ResumeSchemaType } from '@/schema/resume';
+import type { ResumeSchemaType } from "@/schema/resume";
 
 export function generateLatexResume(data: ResumeSchemaType): string {
-  const escapeLatex = (text: string): string => {
-    return text
-      .replace(/\\/g, '\\textbackslash{}')
-      .replace(/[&%$#_{}~^]/g, '\\$&')
-      .replace(/</g, '\\textless{}')
-      .replace(/>/g, '\\textgreater{}');
-  };
+	const escapeLatex = (text: string): string => {
+		return text
+			.replace(/\\/g, "\\textbackslash{}")
+			.replace(/[&%$#_{}~^]/g, "\\$&")
+			.replace(/</g, "\\textless{}")
+			.replace(/>/g, "\\textgreater{}");
+	};
 
-  const formatPhone = (phone: string): string => {
-    // Remove all non-digit characters and format
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length === 10) {
-      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-    }
-    return phone;
-  };
+	const formatPhone = (phone: string): string => {
+		// Remove all non-digit characters and format
+		const digits = phone.replace(/\D/g, "");
+		if (digits.length === 10) {
+			return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+		}
+		return phone;
+	};
 
-  const formatSocialLink = (username: string, platform: string): string => {
-    if (!username) return '';
-    
-    // Construct full URL from username
-    let fullUrl = '';
-    let displayText = '';
-    
-    if (platform === 'linkedin') {
-      fullUrl = `https://linkedin.com/in/${username}`;
-      displayText = `linkedin.com/in/${username}`;
-    } else if (platform === 'github') {
-      fullUrl = `https://github.com/${username}`;
-      displayText = `github.com/${username}`;
-    }
-    
-    return `\\href{${fullUrl}}{\\underline{${displayText}}}`;
-  };
+	const formatSocialLink = (username: string, platform: string): string => {
+		if (!username) return "";
 
-  const formatSkills = (skills: Record<string, string[]>): string => {
-    const skillLines: string[] = [];
-    
-    if (skills.languages?.length) {
-      skillLines.push(`\\textbf{Languages}{: ${skills.languages.join(', ')} }`);
-    } else {
-      skillLines.push(`\\textbf{Languages}{: }`);
-    }
-    if (skills.frameworks?.length) {
-      skillLines.push(`\\textbf{Frameworks}{: ${skills.frameworks.join(', ')} }`);
-    } else {
-      skillLines.push(`\\textbf{Frameworks}{: }`);
-    }
-    if (skills.development_tools?.length) {
-      skillLines.push(`\\textbf{Development Tools}{: ${skills.development_tools.join(', ')} }`);
-    } else {
-      skillLines.push(`\\textbf{Development Tools}{: }`);
-    }
-    if (skills.libraries?.length) {
-      skillLines.push(`\\textbf{Libraries}{: ${skills.libraries.join(', ')} }`);
-    } else {
-      skillLines.push(`\\textbf{Libraries}{: }`);
-    }
-    
-    return skillLines.join(' \\\\ ');
-  };
+		// Construct full URL from username
+		let fullUrl = "";
+		let displayText = "";
 
-  const formatExperience = (experience: any[]): string => {
-    if (!experience?.length) return '';
-    
-    return experience.map(exp => {
-      const responsibilities = exp.responsibilities?.map((resp: string) => 
-        `        \\resumeItem{${escapeLatex(resp)}}`
-      ).join('\n') || '';
-      
-      return `    \\resumeSubheading
+		if (platform === "linkedin") {
+			fullUrl = `https://linkedin.com/in/${username}`;
+			displayText = `linkedin.com/in/${username}`;
+		} else if (platform === "github") {
+			fullUrl = `https://github.com/${username}`;
+			displayText = `github.com/${username}`;
+		}
+
+		return `\\href{${fullUrl}}{\\underline{${displayText}}}`;
+	};
+
+	const formatSkills = (skills: Record<string, string[]>): string => {
+		const skillLines: string[] = [];
+
+		if (skills.languages?.length) {
+			skillLines.push(`\\textbf{Languages}{: ${skills.languages.join(", ")} }`);
+		} else {
+			skillLines.push(`\\textbf{Languages}{: }`);
+		}
+		if (skills.frameworks?.length) {
+			skillLines.push(
+				`\\textbf{Frameworks}{: ${skills.frameworks.join(", ")} }`,
+			);
+		} else {
+			skillLines.push(`\\textbf{Frameworks}{: }`);
+		}
+		if (skills.development_tools?.length) {
+			skillLines.push(
+				`\\textbf{Development Tools}{: ${skills.development_tools.join(", ")} }`,
+			);
+		} else {
+			skillLines.push(`\\textbf{Development Tools}{: }`);
+		}
+		if (skills.libraries?.length) {
+			skillLines.push(`\\textbf{Libraries}{: ${skills.libraries.join(", ")} }`);
+		} else {
+			skillLines.push(`\\textbf{Libraries}{: }`);
+		}
+
+		return skillLines.join(" \\\\ ");
+	};
+
+	const formatExperience = (experience: any[]): string => {
+		if (!experience?.length) return "";
+
+		return experience
+			.map((exp) => {
+				const responsibilities =
+					exp.responsibilities
+						?.map(
+							(resp: string) => `        \\resumeItem{${escapeLatex(resp)}}`,
+						)
+						.join("\n") || "";
+
+				return `    \\resumeSubheading
       {${escapeLatex(exp.position)}}{${escapeLatex(exp.duration)}}
       {${escapeLatex(exp.organization)}}{${escapeLatex(exp.location)}}
       \\resumeItemListStart
 ${responsibilities}
       \\resumeItemListEnd`;
-    }).join('\n\n');
-  };
+			})
+			.join("\n\n");
+	};
 
-  const formatProjects = (projects: any[]): string => {
-    if (!projects?.length) return '';
-    
-    return projects.map(project => {
-      const technologies = project.technologies?.join(', ') || '';
-      const projectYear = project.year || new Date().getFullYear().toString();
-      
-      // Format project title with URL if available
-      let projectTitle = escapeLatex(project.title);
-      if (project.url) {
-        projectTitle = `\\href{${project.url}}{\\underline{\\textbf{${escapeLatex(project.title)}}}}`;
-      }
-      
-      return `      \\resumeProjectHeading
-          { ${projectTitle} ${technologies ? `$|$ \\emph{${escapeLatex(technologies)}}` : ''}}{${projectYear}}
+	const formatProjects = (projects: any[]): string => {
+		if (!projects?.length) return "";
+
+		return projects
+			.map((project) => {
+				const technologies = project.technologies?.join(", ") || "";
+				const projectYear = project.year || new Date().getFullYear().toString();
+
+				// Format project title with URL if available
+				let projectTitle = escapeLatex(project.title);
+				if (project.url) {
+					projectTitle = `\\href{${project.url}}{\\underline{\\textbf{${escapeLatex(project.title)}}}}`;
+				}
+
+				return `      \\resumeProjectHeading
+          { ${projectTitle} ${technologies ? `$|$ \\emph{${escapeLatex(technologies)}}` : ""}}{${projectYear}}
           \\resumeItemListStart
             \\resumeItem{${escapeLatex(project.description)}}
           \\resumeItemListEnd`;
-    }).join('\n\n');
-  };
+			})
+			.join("\n\n");
+	};
 
-  const formatEducation = (education: any[]): string => {
-    if (!education?.length) return '';
-    
-    return education.map(edu => 
-      `    \\resumeSubheading
+	const formatEducation = (education: any[]): string => {
+		if (!education?.length) return "";
+
+		return education
+			.map(
+				(edu) =>
+					`    \\resumeSubheading
       {${escapeLatex(edu.institution)}}{${escapeLatex(edu.location)}}
-      {${escapeLatex(edu.degree)}}{${escapeLatex(edu.duration)}}`
-    ).join('\n\n');
-  };
+      {${escapeLatex(edu.degree)}}{${escapeLatex(edu.duration)}}`,
+			)
+			.join("\n\n");
+	};
 
-  const contactInfo = [
-    data.phone ? `\\href{tel:${data.phone.replace(/\D/g, '')}}{(${formatPhone(data.phone)})}` : '',
-    data.email ? `\\href{mailto:${data.email}}{\\underline{${data.email}}}` : '',
-    data.linkedin ? formatSocialLink(data.linkedin, 'linkedin') : '',
-    data.github ? formatSocialLink(data.github, 'github') : ''
-  ].filter(Boolean).join(' $|$ ');
-  
-  const latexContent = `%-------------------------
+	const contactInfo = [
+		data.phone
+			? `\\href{tel:${data.phone.replace(/\D/g, "")}}{(${formatPhone(data.phone)})}`
+			: "",
+		data.email
+			? `\\href{mailto:${data.email}}{\\underline{${data.email}}}`
+			: "",
+		data.linkedin ? formatSocialLink(data.linkedin, "linkedin") : "",
+		data.github ? formatSocialLink(data.github, "github") : "",
+	]
+		.filter(Boolean)
+		.join(" $|$ ");
+
+	const latexContent = `%-------------------------
 % Resume in Latex
 % Generated by Regen Resume Generator
 % Based off of: https://github.com/sb2nov/resume
@@ -271,16 +291,20 @@ ${formatProjects(data.projects)}
 ${formatEducation(data.education)}
   \\resumeSubHeadingListEnd
 
-${data.certifications && data.certifications.length > 0 ? `
+${
+	data.certifications && data.certifications.length > 0
+		? `
 %-----------CERTIFICATIONS-----------
 \\section{CERTIFICATIONS}
   \\resumeSubHeadingListStart
-    ${data.certifications.map(cert => `\\item ${escapeLatex(cert)}`).join('\n    ')}
+    ${data.certifications.map((cert) => `\\item ${escapeLatex(cert)}`).join("\n    ")}
   \\resumeSubHeadingListEnd
-` : ''}
+`
+		: ""
+}
 
 %
 \\end{document}`;
 
-  return latexContent;
-} 
+	return latexContent;
+}

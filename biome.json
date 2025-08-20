@@ -16,9 +16,9 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
-      "nursery": {
-        "useSortedClasses": "on"
-      }
+			"nursery": {
+				"useSortedClasses": "on"
+			}
 		}
 	},
 	"javascript": {
