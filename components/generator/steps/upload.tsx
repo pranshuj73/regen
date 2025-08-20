@@ -12,9 +12,10 @@ import { Input } from "@/components/ui/input";
 interface UploadStepProps {
 	onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
 	onPasteResume: () => void;
+	isUploading?: boolean;
 }
 
-export function UploadStep({ onFileUpload, onPasteResume }: UploadStepProps) {
+export function UploadStep({ onFileUpload, onPasteResume, isUploading = false }: UploadStepProps) {
 	return (
 		<Card className="w-full h-full">
 			<CardHeader>
@@ -29,16 +30,31 @@ export function UploadStep({ onFileUpload, onPasteResume }: UploadStepProps) {
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<button
-					className="h-64 w-full flex flex-col items-center justify-center space-y-2 bg-gray-800 hover:bg-gray-700 border-2 border-dashed border-gray-600 hover:border-gray-500 rounded-lg cursor-pointer"
+					className="h-64 w-full flex flex-col items-center justify-center space-y-2 bg-gray-800 hover:bg-gray-700 border-2 border-dashed border-gray-600 hover:border-gray-500 rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 					onClick={() => document.getElementById("resume-upload")?.click()}
+					disabled={isUploading}
 				>
-					<Upload className="h-8 w-8 text-blue-600" />
-					<div className="flex flex-col gap-2 text-center">
-						<span className="font-semibold">Upload Resume</span>
-						<span className="text-sm text-gray-500 block">
-							PDF, TXT, DOC, or DOCX files
-						</span>
-					</div>
+					{isUploading ? (
+						<>
+							<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+							<div className="flex flex-col gap-2 text-center">
+								<span className="font-semibold">Processing Your Resume...</span>
+								<span className="text-sm text-gray-500 block">
+									Please wait while we extract the content. This may take a couple seconds.
+								</span>
+							</div>
+						</>
+					) : (
+						<>
+							<Upload className="h-8 w-8 text-blue-600" />
+							<div className="flex flex-col gap-2 text-center">
+								<span className="font-semibold">Upload Resume</span>
+								<span className="text-sm text-gray-500 block">
+									PDF, TXT, DOC, or DOCX files
+								</span>
+							</div>
+						</>
+					)}
 					<Input
 						id="resume-upload"
 						type="file"
@@ -56,6 +72,7 @@ export function UploadStep({ onFileUpload, onPasteResume }: UploadStepProps) {
 					onClick={onPasteResume}
 					variant="outline"
 					className="w-full cursor-pointer"
+					disabled={isUploading}
 				>
 					Paste Resume Content
 				</Button>

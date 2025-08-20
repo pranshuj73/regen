@@ -40,12 +40,14 @@ export default function Home() {
 	});
 	const [generatedResume, setGeneratedResume] = useState<any>("");
 	const [isGenerating, setIsGenerating] = useState(false);
+	const [isUploading, setIsUploading] = useState(false);
 
 	const currentStep = navState.history[navState.history.length - 1];
 
 	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
 		if (file) {
+			setIsUploading(true);
 			const reader = new FileReader();
 			reader.onload = async (e) => {
 				const arrayBuffer = e.target?.result as ArrayBuffer;
@@ -85,6 +87,8 @@ export default function Home() {
 						alert(
 							"Failed to parse PDF. Please try copying and pasting the text content instead.",
 						);
+					} finally {
+						setIsUploading(false);
 					}
 				} else {
 					// Handle text files
@@ -95,6 +99,7 @@ export default function Home() {
 						history: [...prev.history, "updates"],
 					}));
 				}
+				setIsUploading(false);
 			};
 			reader.readAsArrayBuffer(file);
 		}
@@ -139,6 +144,11 @@ export default function Home() {
 			...prev,
 			pageState: { ...prev.pageState, jd: { text: jd } },
 		}));
+		setIsGenerating(true);
+		setNavState((prev) => ({
+			...prev,
+			history: [...prev.history, "preview"],
+		}));
 		setTimeout(() => generateResume(), 0);
 	};
 
@@ -169,10 +179,6 @@ export default function Home() {
 				const result = await response.json();
 				setGeneratedResume(result.data);
 				setIsGenerating(false);
-				setNavState((prev) => ({
-					...prev,
-					history: [...prev.history, "preview"],
-				}));
 			}
 		} catch (error) {
 			// noop
@@ -191,6 +197,7 @@ export default function Home() {
 		});
 		setGeneratedResume("");
 		setIsGenerating(false);
+		setIsUploading(false);
 	};
 
 	const navigateTo = (step: Step) => {
@@ -224,6 +231,7 @@ export default function Home() {
 								<UploadStep
 									onFileUpload={handleFileUpload}
 									onPasteResume={() => navigateTo("paste")}
+									isUploading={isUploading}
 								/>
 							);
 						case "paste":
@@ -248,7 +256,14 @@ export default function Home() {
 							return (
 								<JDStep
 									onSubmit={handleJDSubmit}
-									onSkip={() => generateResume()}
+									onSkip={() => {
+										setIsGenerating(true);
+										setNavState((prev) => ({
+											...prev,
+											history: [...prev.history, "preview"],
+										}));
+										setTimeout(() => generateResume(), 0);
+									}}
 									initialJD={navState.pageState?.jd?.text}
 									onChangeJD={handleJDChange}
 								/>
