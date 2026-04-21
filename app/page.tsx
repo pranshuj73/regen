@@ -215,12 +215,12 @@ export default function Home() {
 	const canGoBack = navState.history.length > 1;
 
 	return (
-		<ResumeGeneratorWrapper className="bg-white rounded-lg shadow-lg p-6">
-				<h1 className="text-5xl font-extrabold mb-6">Create Your Professional Resume</h1>
-				<p className="mb-8 text-lg">Effortlessly create your resume. Upload your document or paste your text below to get started!</p>
+		<ResumeGeneratorWrapper className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg shadow-lg p-8">
+				<h1 className="text-6xl font-extrabold mb-6 text-white">Create Your Professional Resume</h1>
+				<p className="mb-8 text-lg text-white">Effortlessly create your resume. Upload your document or paste your text below to get started!</p>
 			<StepWrapper showBackButton={canGoBack} onBack={goBack}>
 					<div className="mb-4">
-						<textarea placeholder="Paste your text here..." className="resize-none border-2 border-blue-500 focus:border-blue-700" onChange={(e) => handlePasteInput(e.target.value)}></textarea>
+						<textarea placeholder="Paste your text here..." className="resize-none border-2 border-white focus:border-blue-700 bg-gray-800 text-white" onChange={(e) => handlePasteInput(e.target.value)}></textarea>
 					</div>
 				{(() => {
 					switch (currentStep) {
