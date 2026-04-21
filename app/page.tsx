@@ -216,7 +216,12 @@ export default function Home() {
 
 	return (
 		<ResumeGeneratorWrapper>
+				<h1 className="text-4xl font-bold mb-4">Welcome to the Resume Generator</h1>
+				<p className="mb-8">Create your resume effortlessly. Start by uploading your document or pasting your text below.</p>
 			<StepWrapper showBackButton={canGoBack} onBack={goBack}>
+					<div className="mb-4">
+						<textarea placeholder="Paste your text here..." className="resize-none" onChange={(e) => handlePasteInput(e.target.value)}></textarea>
+					</div>
 				{(() => {
 					switch (currentStep) {
 						case "menu":
