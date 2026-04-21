@@ -7,12 +7,12 @@ body {
 	justify-content: center;
 	min-height: 100vh;
 	padding: 20px;
-	background: linear-gradient(to right, #4a90e2, #9013fe);
+	background: linear-gradient(to right, #6a11cb, #2575fc);
 	color: #ffffff;
 	font-family: var(--font-geist-sans);
 	text-align: center;
 }
-	background: linear-gradient(to right, #4a90e2, #9013fe);
+	background: linear-gradient(to right, #6a11cb, #2575fc);
 	color: #ffffff;
 	font-family: var(--font-geist-sans);
 }
