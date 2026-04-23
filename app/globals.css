@@ -1,6 +1,23 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Custom Gradient Background */
+body {
+  background: linear-gradient(135deg, #222326, #0F0F10);
+}
+
+/* Accent Button Styling */
+button {
+  background-color: var(--primary);
+  color: var(--accent-foreground);
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  transition: background-color 0.3s ease;
+}
+button:hover {
+  background-color: var(--primary-foreground);
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
