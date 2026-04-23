@@ -6,13 +6,33 @@ body {
   background: linear-gradient(135deg, #222326, #0F0F10);
 }
 
+.title {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 1.5rem;
+}
+
 /* Accent Button Styling */
 button {
-  background-color: var(--primary);
-  color: var(--accent-foreground);
   padding: 10px 20px;
   border-radius: var(--radius-md);
   transition: background-color 0.3s ease;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--accent-foreground);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
 }
 button:hover {
   background-color: var(--primary-foreground);
