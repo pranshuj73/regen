@@ -15,47 +15,53 @@ interface MenuStepProps {
 
 export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
 	return (
-		<Card className="w-full h-full py-16">
-			<CardHeader className="text-center mb-4">
-				<CardTitle className="text-6xl font-bold text-white mb-2 mono">
+		<Card className="w-full border border-white/10 bg-white/[0.03] py-14 shadow-[0_0_0_1px_rgba(255,255,255,0.03)] backdrop-blur-xl">
+			<CardHeader className="mb-6 space-y-4 text-center">
+				<p className="text-xs font-medium tracking-[0.18em] text-indigo-300/90 uppercase">
+					Resume generator
+				</p>
+				<CardTitle className="text-5xl font-semibold tracking-tight text-neutral-100 sm:text-6xl">
 					REGEN
 				</CardTitle>
-				<CardDescription className="text-gray-400 mx-auto">
-					Upload your resume → Give us a job description → Get a tailored PDF
-					resume in seconds.
+				<CardDescription className="mx-auto max-w-2xl text-sm text-neutral-400 sm:text-base">
+					Upload your resume, add updates, include a role brief, and generate a
+					tailored PDF in seconds.
 				</CardDescription>
 			</CardHeader>
-			<CardContent className="space-y-4">
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+			<CardContent className="space-y-5">
+				<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 					<Button
 						onClick={onUpload}
-						className="h-32 flex flex-col items-center justify-center space-y-2 bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-gray-400 cursor-pointer"
 						variant="outline"
+						className="group h-36 cursor-pointer flex-col items-start justify-between gap-3 rounded-xl border border-white/15 bg-white/[0.02] p-5 text-left text-neutral-100 transition-colors hover:border-indigo-300/45 hover:bg-indigo-500/[0.08]"
 					>
-						<Upload className="h-8 w-8 text-blue-600" />
-						<span className="font-semibold">Upload Resume</span>
-						<span className="text-sm text-gray-500">
-							Upload your existing resume
-						</span>
+						<Upload className="h-5 w-5 text-indigo-300 transition-colors group-hover:text-indigo-200" />
+						<div className="space-y-1">
+							<span className="block text-base font-medium">Upload resume</span>
+							<span className="block text-xs text-neutral-400">
+								Select a PDF or text file.
+							</span>
+						</div>
 					</Button>
 
 					<Button
 						onClick={onPaste}
-						className="h-32 flex flex-col items-center justify-center space-y-2 bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-gray-400 cursor-pointer"
 						variant="outline"
+						className="group h-36 cursor-pointer flex-col items-start justify-between gap-3 rounded-xl border border-white/15 bg-white/[0.02] p-5 text-left text-neutral-100 transition-colors hover:border-indigo-300/45 hover:bg-indigo-500/[0.08]"
 					>
-						<FileText className="h-8 w-8 text-green-600" />
-						<span className="font-semibold">Paste Resume</span>
-						<span className="text-sm text-gray-500">
-							Paste your resume content
-						</span>
+						<FileText className="h-5 w-5 text-indigo-300 transition-colors group-hover:text-indigo-200" />
+						<div className="space-y-1">
+							<span className="block text-base font-medium">Paste resume</span>
+							<span className="block text-xs text-neutral-400">
+								Paste plain-text resume content.
+							</span>
+						</div>
 					</Button>
 				</div>
-				<p className="text-xs text-center text-gray-500 mt-10 -mb-10">
-					NB: We don't save any of your details, there's no auth, there's no db.
+				<p className="pt-2 text-center text-xs leading-relaxed text-neutral-500">
+					No auth. No database. Your data is processed in session.
 					<br />
-					Please make sure to download the generated resume or it'll be lost to
-					the void.
+					Download the generated resume before starting over.
 				</p>
 			</CardContent>
 		</Card>
