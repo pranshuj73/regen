@@ -1,292 +1,550 @@
 "use client";
 
-import { useState } from "react";
-import {
-	JDStep,
-	MenuStep,
-	PasteStep,
-	PreviewStep,
-	ResumeGeneratorWrapper,
-	StepWrapper,
-	UpdatesStep,
-	UploadStep,
-} from "@/components/generator";
+import { Bot, Download, RefreshCcw, Send, Upload, User } from "lucide-react";
+import { useRef, useState } from "react";
+import { ResumeGeneratorWrapper } from "@/components/generator/layout/resume-generator-wrapper";
+import { PrintResume } from "@/components/generator/resume/print-resume";
+import { ResumeComponent } from "@/components/generator/resume/resume-component";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useResumePrint } from "@/lib/pdf-utils";
+import type { ResumeSchemaType } from "@/schema/resume";
 
-type Step = "menu" | "upload" | "paste" | "updates" | "jd" | "preview";
+type Sender = "bot" | "user";
+type ChatStage =
+	| "method"
+	| "upload"
+	| "paste"
+	| "updates"
+	| "customUpdates"
+	| "jobDescription"
+	| "generating"
+	| "result";
 
-interface PageState {
-	upload?: { content: string };
-	updates?: {
-		selectedIds: string[];
-		customUpdates: string;
-		combinedText: string;
-	};
-	jd?: { text: string };
+interface Message {
+	id: number;
+	sender: Sender;
+	text: string;
 }
 
-interface NavState {
-	history: Step[];
-	pageState: PageState;
-}
+const commonUpdates = [
+	{
+		id: "formatting",
+		label: "Improve formatting and layout",
+		description: "Make the resume more visually appealing and professional",
+	},
+	{
+		id: "ats",
+		label: "Optimize for ATS (Applicant Tracking Systems)",
+		description: "Ensure the resume passes through automated screening systems",
+	},
+	{
+		id: "achievements",
+		label: "Enhance achievements and impact",
+		description: "Add quantifiable results and specific accomplishments",
+	},
+	{
+		id: "skills",
+		label: "Update and organize skills",
+		description: "Reorganize skills to match job requirements",
+	},
+	{
+		id: "summary",
+		label: "Improve professional summary",
+		description: "Create a compelling and targeted summary",
+	},
+	{
+		id: "language",
+		label: "Improve language and clarity",
+		description: "Use more powerful and clear language throughout",
+	},
+];
 
 export default function Home() {
-	const [navState, setNavState] = useState<NavState>({
-		history: ["menu"],
-		pageState: {
-			upload: { content: "" },
-			updates: { selectedIds: [], customUpdates: "", combinedText: "" },
-			jd: { text: "" },
+	const [messages, setMessages] = useState<Message[]>([
+		{
+			id: 1,
+			sender: "bot",
+			text: "Hi! I can tailor your resume in a quick chat.",
 		},
-	});
-	const [generatedResume, setGeneratedResume] = useState<any>("");
-	const [isGenerating, setIsGenerating] = useState(false);
+		{
+			id: 2,
+			sender: "bot",
+			text: "How would you like to provide your current resume?",
+		},
+	]);
+	const [stage, setStage] = useState<ChatStage>("method");
+	const [inputMethod, setInputMethod] = useState<"upload" | "paste" | null>(
+		null,
+	);
+	const [draftText, setDraftText] = useState("");
+	const [resumeContent, setResumeContent] = useState("");
+	const [selectedUpdates, setSelectedUpdates] = useState<string[]>([]);
+	const [customUpdates, setCustomUpdates] = useState("");
+	const [generatedResume, setGeneratedResume] = useState<ResumeSchemaType | null>(
+		null,
+	);
 	const [isUploading, setIsUploading] = useState(false);
+	const [isGenerating, setIsGenerating] = useState(false);
 
-	const currentStep = navState.history[navState.history.length - 1];
+	const messageId = useRef(3);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const resumeRef = useRef<HTMLDivElement>(null);
+	const handlePrint = useResumePrint(resumeRef);
+
+	const addMessage = (sender: Sender, text: string) => {
+		setMessages((prev) => [...prev, { id: messageId.current++, sender, text }]);
+	};
+
+	const askForUpdates = () => {
+		addMessage(
+			"bot",
+			"Nice. What updates would you like me to apply to this resume? Pick all that apply.",
+		);
+		setStage("updates");
+	};
+
+	const handleMethodSelect = (method: "upload" | "paste") => {
+		setInputMethod(method);
+		addMessage(
+			"user",
+			method === "upload" ? "Upload Resume" : "Paste Resume Content",
+		);
+
+		if (method === "upload") {
+			addMessage("bot", "Great — upload your resume file.");
+			setStage("upload");
+			return;
+		}
+
+		addMessage("bot", "Paste your resume content in the chat box below.");
+		setStage("paste");
+	};
 
 	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
-		if (file) {
-			setIsUploading(true);
-			const reader = new FileReader();
-			reader.onload = async (e) => {
-				const arrayBuffer = e.target?.result as ArrayBuffer;
+		if (!file) {
+			return;
+		}
 
-				if (
-					file.type === "application/pdf" ||
-					file.name.toLowerCase().endsWith(".pdf")
-				) {
-					// Handle PDF files
-					try {
-						const response = await fetch("/api/parse-pdf", {
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({
-								filename: file.name,
-								data: Array.from(new Uint8Array(arrayBuffer)),
-							}),
-						});
+		setIsUploading(true);
+		const reader = new FileReader();
+		reader.onload = async (e) => {
+			const arrayBuffer = e.target?.result as ArrayBuffer;
 
-						if (response.ok) {
-							const result = await response.json();
-							setNavState((prev) => ({
-								...prev,
-								pageState: {
-									...prev.pageState,
-									upload: { content: result.text },
-								},
-								history: [...prev.history, "updates"],
-							}));
-						} else {
-							alert(
-								"Failed to parse PDF. Please try copying and pasting the text content instead.",
-							);
-						}
-					} catch (error) {
-						console.error("Error parsing PDF:", error);
-						alert(
-							"Failed to parse PDF. Please try copying and pasting the text content instead.",
-						);
-					} finally {
-						setIsUploading(false);
+			if (
+				file.type === "application/pdf" ||
+				file.name.toLowerCase().endsWith(".pdf")
+			) {
+				try {
+					const response = await fetch("/api/parse-pdf", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							filename: file.name,
+							data: Array.from(new Uint8Array(arrayBuffer)),
+						}),
+					});
+
+					if (!response.ok) {
+						throw new Error("Unable to parse PDF");
 					}
-				} else {
-					// Handle text files
-					const content = new TextDecoder().decode(arrayBuffer);
-					setNavState((prev) => ({
-						...prev,
-						pageState: { ...prev.pageState, upload: { content } },
-						history: [...prev.history, "updates"],
-					}));
+
+					const result = await response.json();
+					setResumeContent(result.text || "");
+					addMessage("user", `Uploaded ${file.name}`);
+					askForUpdates();
+				} catch {
+					addMessage(
+						"bot",
+						"I couldn't parse that PDF. Please try another file or switch to paste mode.",
+					);
 				}
-				setIsUploading(false);
-			};
-			reader.readAsArrayBuffer(file);
+			} else {
+				const content = new TextDecoder().decode(arrayBuffer);
+				setResumeContent(content);
+				addMessage("user", `Uploaded ${file.name}`);
+				askForUpdates();
+			}
+
+			setIsUploading(false);
+		};
+
+		reader.readAsArrayBuffer(file);
+	};
+
+	const handleSubmitText = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		const value = draftText.trim();
+
+		if (stage === "paste") {
+			if (!value) {
+				return;
+			}
+			setResumeContent(value);
+			addMessage("user", "Shared my resume content.");
+			setDraftText("");
+			askForUpdates();
+			return;
+		}
+
+		if (stage === "customUpdates") {
+			setCustomUpdates(value);
+			addMessage(
+				"user",
+				value || "No additional requirements.",
+			);
+			setDraftText("");
+			addMessage(
+				"bot",
+				"Got it. Paste the job description to tailor your resume, or skip this step.",
+			);
+			setStage("jobDescription");
+			return;
+		}
+
+		if (stage === "jobDescription") {
+			addMessage(
+				"user",
+				value || "Skip job description",
+			);
+			setDraftText("");
+			void generateResume(value);
 		}
 	};
 
-	const handlePasteInput = (content: string) => {
-		setNavState((prev) => ({
-			...prev,
-			pageState: { ...prev.pageState, upload: { content } },
-			history: [...prev.history, "updates"],
-		}));
+	const handleContinueUpdates = () => {
+		const selectedLabels = commonUpdates
+			.filter((update) => selectedUpdates.includes(update.id))
+			.map((update) => update.label);
+
+		addMessage(
+			"user",
+			selectedLabels.length > 0
+				? selectedLabels.join(", ")
+				: "No common updates selected.",
+		);
+		addMessage(
+			"bot",
+			"Any additional requirements? You can type them below or skip.",
+		);
+		setStage("customUpdates");
 	};
 
-	const handleUpdatesSubmit = (updates: string) => {
-		setNavState((prev) => ({
-			...prev,
-			pageState: {
-				...prev.pageState,
-				updates: {
-					selectedIds: prev.pageState.updates?.selectedIds || [],
-					customUpdates: prev.pageState.updates?.customUpdates || "",
-					combinedText: updates,
-				},
-			},
-			history: [...prev.history, "jd"],
-		}));
+	const skipCustomUpdates = () => {
+		setCustomUpdates("");
+		addMessage("user", "No additional requirements.");
+		addMessage(
+			"bot",
+			"Perfect. Add a job description for tailoring, or skip and generate now.",
+		);
+		setStage("jobDescription");
 	};
 
-	const handleUpdatesPersist = (meta: {
-		selectedIds: string[];
-		customUpdates: string;
-		combinedText: string;
-	}) => {
-		setNavState((prev) => ({
-			...prev,
-			pageState: { ...prev.pageState, updates: meta },
-		}));
+	const skipJobDescription = () => {
+		addMessage("user", "Skip job description");
+		void generateResume("");
 	};
 
-	const handleJDSubmit = (jd: string) => {
-		setNavState((prev) => ({
-			...prev,
-			pageState: { ...prev.pageState, jd: { text: jd } },
-		}));
+	const generateResume = async (jd: string) => {
+		setStage("generating");
 		setIsGenerating(true);
-		setNavState((prev) => ({
-			...prev,
-			history: [...prev.history, "preview"],
-		}));
-		setTimeout(() => generateResume(), 0);
-	};
+		addMessage("bot", "Generating your tailored resume now...");
 
-	const handleJDChange = (text: string) => {
-		setNavState((prev) => ({
-			...prev,
-			pageState: { ...prev.pageState, jd: { text } },
-		}));
-	};
-
-	const generateResume = async () => {
-		// Update to show generating state
-		setIsGenerating(true);
+		const selectedDescriptions = commonUpdates
+			.filter((update) => selectedUpdates.includes(update.id))
+			.map((update) => update.description);
+		const combinedUpdates = [...selectedDescriptions, customUpdates]
+			.filter(Boolean)
+			.join("\n");
 
 		try {
-			const payload = {
-				content: navState.pageState.upload?.content || "",
-				updates: navState.pageState.updates?.combinedText || "",
-				jobDescription: navState.pageState.jd?.text || "",
-			};
 			const response = await fetch("/api/generate", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(payload),
+				body: JSON.stringify({
+					content: resumeContent,
+					updates: combinedUpdates,
+					jobDescription: jd,
+				}),
 			});
 
-			if (response.ok) {
-				const result = await response.json();
-				setGeneratedResume(result.data);
-				setIsGenerating(false);
+			if (!response.ok) {
+				throw new Error("Generation failed");
 			}
-		} catch (error) {
-			// noop
+
+			const result = await response.json();
+			setGeneratedResume(result.data);
+			setStage("result");
+			addMessage(
+				"bot",
+				"Your resume is ready. You can preview it below and download as a PDF.",
+			);
+		} catch {
+			setStage("jobDescription");
+			addMessage(
+				"bot",
+				"Something went wrong while generating. Please try again.",
+			);
+		} finally {
 			setIsGenerating(false);
 		}
 	};
 
-	const handleGenerateNew = () => {
-		setNavState({
-			history: ["menu"],
-			pageState: {
-				upload: { content: "" },
-				updates: { selectedIds: [], customUpdates: "", combinedText: "" },
-				jd: { text: "" },
+	const resetConversation = () => {
+		setMessages([
+			{
+				id: 1,
+				sender: "bot",
+				text: "Hi! I can tailor your resume in a quick chat.",
 			},
-		});
-		setGeneratedResume("");
-		setIsGenerating(false);
+			{
+				id: 2,
+				sender: "bot",
+				text: "How would you like to provide your current resume?",
+			},
+		]);
+		messageId.current = 3;
+		setStage("method");
+		setInputMethod(null);
+		setDraftText("");
+		setResumeContent("");
+		setSelectedUpdates([]);
+		setCustomUpdates("");
+		setGeneratedResume(null);
 		setIsUploading(false);
+		setIsGenerating(false);
 	};
-
-	const navigateTo = (step: Step) => {
-		setNavState((prev) => ({ ...prev, history: [...prev.history, step] }));
-	};
-
-	const goBack = () => {
-		setNavState((prev) =>
-			prev.history.length > 1
-				? { ...prev, history: prev.history.slice(0, -1) }
-				: prev,
-		);
-	};
-
-	const canGoBack = navState.history.length > 1;
 
 	return (
 		<ResumeGeneratorWrapper>
-			<StepWrapper showBackButton={canGoBack} onBack={goBack}>
-				{(() => {
-					switch (currentStep) {
-						case "menu":
-							return (
-								<MenuStep
-									onUpload={() => navigateTo("upload")}
-									onPaste={() => navigateTo("paste")}
+			{generatedResume && <PrintResume data={generatedResume} />}
+			<Card className="w-full max-w-4xl h-[90vh] flex flex-col">
+				<CardHeader className="border-b">
+					<div className="flex items-center justify-between gap-2">
+						<CardTitle>REGEN Chat</CardTitle>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={resetConversation}
+							className="cursor-pointer"
+						>
+							<RefreshCcw className="h-4 w-4 mr-2" />
+							Start Over
+						</Button>
+					</div>
+				</CardHeader>
+				<CardContent className="flex-1 flex flex-col min-h-0 p-0">
+					<div className="flex-1 overflow-y-auto p-4 space-y-4">
+						{messages.map((message) => (
+							<div
+								key={message.id}
+								className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
+							>
+								<div
+									className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${
+										message.sender === "user"
+											? "bg-primary text-primary-foreground"
+											: "bg-muted"
+									}`}
+								>
+									<div className="flex items-center gap-2 mb-1 opacity-80">
+										{message.sender === "user" ? (
+											<User className="h-3.5 w-3.5" />
+										) : (
+											<Bot className="h-3.5 w-3.5" />
+										)}
+										<span className="text-xs">
+											{message.sender === "user" ? "You" : "Regen"}
+										</span>
+									</div>
+									<p className="whitespace-pre-wrap">{message.text}</p>
+								</div>
+							</div>
+						))}
+
+						{isGenerating && (
+							<div className="text-sm text-muted-foreground">Generating...</div>
+						)}
+
+						{stage === "result" && generatedResume && (
+							<div className="space-y-3">
+								<div className="flex flex-wrap gap-2">
+									<Button onClick={handlePrint} className="cursor-pointer">
+										<Download className="h-4 w-4 mr-2" />
+										Download PDF
+									</Button>
+								</div>
+								<div ref={resumeRef} className="border rounded-lg bg-white">
+									<ResumeComponent data={generatedResume} />
+								</div>
+							</div>
+						)}
+					</div>
+
+					<div className="border-t p-4 space-y-3">
+						{stage === "method" && (
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+								<Button
+									onClick={() => handleMethodSelect("upload")}
+									variant="outline"
+									className="cursor-pointer"
+								>
+									Upload Resume
+								</Button>
+								<Button
+									onClick={() => handleMethodSelect("paste")}
+									variant="outline"
+									className="cursor-pointer"
+								>
+									Paste Resume Content
+								</Button>
+							</div>
+						)}
+
+						{stage === "upload" && (
+							<div className="space-y-2">
+								<Button
+									onClick={() => fileInputRef.current?.click()}
+									disabled={isUploading}
+									className="w-full cursor-pointer"
+								>
+									<Upload className="h-4 w-4 mr-2" />
+									{isUploading ? "Processing file..." : "Choose Resume File"}
+								</Button>
+								<input
+									ref={fileInputRef}
+									type="file"
+									accept=".pdf,.txt,.doc,.docx"
+									onChange={handleFileUpload}
+									className="hidden"
 								/>
-							);
-						case "upload":
-							return (
-								<UploadStep
-									onFileUpload={handleFileUpload}
-									onPasteResume={() => navigateTo("paste")}
-									isUploading={isUploading}
-								/>
-							);
-						case "paste":
-							return (
-								<PasteStep
-									onSubmit={handlePasteInput}
-									onUploadResume={() => navigateTo("upload")}
-								/>
-							);
-						case "updates":
-							return (
-								<UpdatesStep
-									onSubmit={handleUpdatesSubmit}
-									onSubmitWithMeta={handleUpdatesPersist}
-									initialSelectedIds={navState.pageState?.updates?.selectedIds}
-									initialCustomUpdates={
-										navState.pageState?.updates?.customUpdates
+								<Button
+									onClick={() => {
+										setInputMethod("paste");
+										setStage("paste");
+										addMessage("user", "Switching to paste mode");
+										addMessage(
+											"bot",
+											"No problem. Paste your resume content below.",
+										);
+									}}
+									variant="ghost"
+									className="w-full cursor-pointer"
+								>
+									Paste instead
+								</Button>
+							</div>
+						)}
+
+						{stage === "updates" && (
+							<div className="space-y-3">
+								<Label className="text-sm">Select one or more updates</Label>
+								<div className="max-h-44 overflow-y-auto space-y-2 pr-2">
+									{commonUpdates.map((update) => (
+										<button
+											type="button"
+											key={update.id}
+											onClick={() =>
+												setSelectedUpdates((prev) =>
+													prev.includes(update.id)
+														? prev.filter((id) => id !== update.id)
+														: [...prev, update.id],
+												)
+											}
+											className="w-full text-left flex items-start gap-3 border rounded-lg p-3 hover:bg-muted cursor-pointer"
+										>
+											<Checkbox
+												checked={selectedUpdates.includes(update.id)}
+												className="pointer-events-none"
+											/>
+											<div>
+												<p className="text-sm font-medium">{update.label}</p>
+												<p className="text-xs text-muted-foreground">
+													{update.description}
+												</p>
+											</div>
+										</button>
+									))}
+								</div>
+								<Button
+									onClick={handleContinueUpdates}
+									className="w-full cursor-pointer"
+								>
+									Continue
+								</Button>
+							</div>
+						)}
+
+						{(stage === "paste" ||
+							stage === "customUpdates" ||
+							stage === "jobDescription") && (
+							<form onSubmit={handleSubmitText} className="space-y-2">
+								<Textarea
+									value={draftText}
+									onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+										setDraftText(e.target.value)
+									}
+									rows={stage === "paste" ? 6 : 4}
+									placeholder={
+										stage === "paste"
+											? "Paste your resume content..."
+											: stage === "customUpdates"
+												? "Type any additional requirements (optional)..."
+												: "Paste job description (optional)..."
 									}
 								/>
-							);
-						case "jd":
-							return (
-								<JDStep
-									onSubmit={handleJDSubmit}
-									onSkip={() => {
-										setIsGenerating(true);
-										setNavState((prev) => ({
-											...prev,
-											history: [...prev.history, "preview"],
-										}));
-										setTimeout(() => generateResume(), 0);
-									}}
-									initialJD={navState.pageState?.jd?.text}
-									onChangeJD={handleJDChange}
-								/>
-							);
-						case "preview":
-							return (
-								<PreviewStep
-									isGenerating={isGenerating}
-									generatedResume={generatedResume}
-									onDownload={() => {}}
-									onGenerateNew={handleGenerateNew}
-								/>
-							);
-						default:
-							return (
-								<MenuStep
-									onUpload={() => navigateTo("upload")}
-									onPaste={() => navigateTo("paste")}
-								/>
-							);
-					}
-				})()}
-			</StepWrapper>
+								<div className="flex gap-2">
+									<Button
+										type="submit"
+										disabled={
+											isGenerating || (stage === "paste" && !draftText.trim())
+										}
+										className="flex-1 cursor-pointer"
+									>
+										<Send className="h-4 w-4 mr-2" />
+										Send
+									</Button>
+									{stage === "customUpdates" && (
+										<Button
+											type="button"
+											onClick={skipCustomUpdates}
+											variant="outline"
+											className="cursor-pointer"
+										>
+											Skip
+										</Button>
+									)}
+									{stage === "jobDescription" && (
+										<Button
+											type="button"
+											onClick={skipJobDescription}
+											variant="outline"
+											disabled={isGenerating}
+											className="cursor-pointer"
+										>
+											Skip
+										</Button>
+									)}
+								</div>
+							</form>
+						)}
+
+						{(stage === "generating" || stage === "result") &&
+							inputMethod &&
+							!generatedResume && (
+								<div className="text-xs text-muted-foreground">
+									{inputMethod === "upload"
+										? "Using your uploaded resume as input."
+										: "Using your pasted resume content as input."}
+								</div>
+							)}
+					</div>
+				</CardContent>
+			</Card>
 		</ResumeGeneratorWrapper>
 	);
 }
