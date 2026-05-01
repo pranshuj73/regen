@@ -1,7 +1,7 @@
 "use client";
 
 import { Bot, Download, RefreshCcw, Send, Upload, User } from "lucide-react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ResumeGeneratorWrapper } from "@/components/generator/layout/resume-generator-wrapper";
 import { PrintResume } from "@/components/generator/resume/print-resume";
 import { ResumeComponent } from "@/components/generator/resume/resume-component";
@@ -14,10 +14,13 @@ import { useResumePrint } from "@/lib/pdf-utils";
 import type { ResumeSchemaType } from "@/schema/resume";
 
 type Sender = "bot" | "user";
+type InputMethod = "upload" | "paste-simple" | "paste-structured" | null;
 type ChatStage =
 	| "method"
+	| "pasteMode"
 	| "upload"
 	| "paste"
+	| "structuredField"
 	| "updates"
 	| "customUpdates"
 	| "jobDescription"
@@ -28,6 +31,17 @@ interface Message {
 	id: number;
 	sender: Sender;
 	text: string;
+}
+
+interface StructuredFields {
+	name: string;
+	email: string;
+	phone: string;
+	summary: string;
+	experience: string;
+	education: string;
+	skills: string;
+	projects: string;
 }
 
 const commonUpdates = [
@@ -63,25 +77,114 @@ const commonUpdates = [
 	},
 ];
 
+const structuredQuestions: Array<{
+	key: keyof StructuredFields;
+	label: string;
+	placeholder: string;
+	required?: boolean;
+}> = [
+	{
+		key: "name",
+		label: "Full Name",
+		placeholder: "Enter your full name",
+		required: true,
+	},
+	{
+		key: "email",
+		label: "Email",
+		placeholder: "Enter your email",
+		required: true,
+	},
+	{
+		key: "phone",
+		label: "Phone",
+		placeholder: "Enter your phone number (optional)",
+	},
+	{
+		key: "summary",
+		label: "Professional Summary",
+		placeholder:
+			"Brief overview of your professional background and career objectives...",
+	},
+	{
+		key: "experience",
+		label: "Work Experience",
+		placeholder:
+			"List your work experience with company names, positions, dates, and key responsibilities...",
+	},
+	{
+		key: "education",
+		label: "Education",
+		placeholder: "List your educational background...",
+	},
+	{
+		key: "skills",
+		label: "Skills",
+		placeholder: "List your technical and soft skills...",
+	},
+	{
+		key: "projects",
+		label: "Projects (Optional)",
+		placeholder: "Describe any relevant projects you've worked on...",
+	},
+];
+
+const initialStructuredFields: StructuredFields = {
+	name: "",
+	email: "",
+	phone: "",
+	summary: "",
+	experience: "",
+	education: "",
+	skills: "",
+	projects: "",
+};
+
+const initialMessages: Message[] = [
+	{
+		id: 1,
+		sender: "bot",
+		text: "Hi! I can tailor your resume in a quick chat.",
+	},
+	{
+		id: 2,
+		sender: "bot",
+		text: "How would you like to provide your current resume?",
+	},
+];
+
+const buildStructuredResumeContent = (fields: StructuredFields) => {
+	return `
+Name: ${fields.name}
+Email: ${fields.email}
+Phone: ${fields.phone}
+
+Professional Summary:
+${fields.summary}
+
+Work Experience:
+${fields.experience}
+
+Education:
+${fields.education}
+
+Skills:
+${fields.skills}
+
+Projects:
+${fields.projects}
+`.trim();
+};
+
 export default function Home() {
-	const [messages, setMessages] = useState<Message[]>([
-		{
-			id: 1,
-			sender: "bot",
-			text: "Hi! I can tailor your resume in a quick chat.",
-		},
-		{
-			id: 2,
-			sender: "bot",
-			text: "How would you like to provide your current resume?",
-		},
-	]);
+	const [messages, setMessages] = useState<Message[]>(initialMessages);
 	const [stage, setStage] = useState<ChatStage>("method");
-	const [inputMethod, setInputMethod] = useState<"upload" | "paste" | null>(
-		null,
-	);
+	const [inputMethod, setInputMethod] = useState<InputMethod>(null);
 	const [draftText, setDraftText] = useState("");
 	const [resumeContent, setResumeContent] = useState("");
+	const [structuredFields, setStructuredFields] =
+		useState<StructuredFields>(initialStructuredFields);
+	const [structuredFieldIndex, setStructuredFieldIndex] = useState(0);
 	const [selectedUpdates, setSelectedUpdates] = useState<string[]>([]);
 	const [customUpdates, setCustomUpdates] = useState("");
 	const [generatedResume, setGeneratedResume] = useState<ResumeSchemaType | null>(
@@ -95,6 +198,17 @@ export default function Home() {
 	const resumeRef = useRef<HTMLDivElement>(null);
 	const handlePrint = useResumePrint(resumeRef);
 
+	const currentStructuredQuestion = structuredQuestions[structuredFieldIndex];
+
+	const disableTextSubmit = useMemo(() => {
+		if (isGenerating) return true;
+		if (stage === "paste") return !draftText.trim();
+		if (stage === "structuredField" && currentStructuredQuestion?.required) {
+			return !draftText.trim();
+		}
+		return false;
+	}, [draftText, stage, isGenerating, currentStructuredQuestion]);
+
 	const addMessage = (sender: Sender, text: string) => {
 		setMessages((prev) => [...prev, { id: messageId.current++, sender, text }]);
 	};
@@ -102,33 +216,60 @@ export default function Home() {
 	const askForUpdates = () => {
 		addMessage(
 			"bot",
-			"Nice. What updates would you like me to apply to this resume? Pick all that apply.",
+			"What updates would you like to make? Select one or more options below.",
 		);
 		setStage("updates");
 	};
 
-	const handleMethodSelect = (method: "upload" | "paste") => {
-		setInputMethod(method);
+	const askStructuredQuestion = (index: number) => {
+		const question = structuredQuestions[index];
+		if (!question) return;
 		addMessage(
-			"user",
-			method === "upload" ? "Upload Resume" : "Paste Resume Content",
+			"bot",
+			question.required
+				? `${question.label} (required)`
+				: `${question.label} (optional)`,
 		);
+		setStage("structuredField");
+	};
+
+	const handleMethodSelect = (method: "upload" | "paste") => {
+		addMessage("user", method === "upload" ? "Upload Resume" : "Paste Resume");
 
 		if (method === "upload") {
+			setInputMethod("upload");
 			addMessage("bot", "Great — upload your resume file.");
 			setStage("upload");
 			return;
 		}
 
-		addMessage("bot", "Paste your resume content in the chat box below.");
-		setStage("paste");
+		addMessage(
+			"bot",
+			"Do you want to use Simple Paste or Structured Form for your resume content?",
+		);
+		setStage("pasteMode");
+	};
+
+	const handlePasteModeSelect = (mode: "simple" | "structured") => {
+		if (mode === "simple") {
+			setInputMethod("paste-simple");
+			addMessage("user", "Simple Paste");
+			addMessage("bot", "Paste your resume content below.");
+			setStage("paste");
+			return;
+		}
+
+		setInputMethod("paste-structured");
+		setStructuredFields(initialStructuredFields);
+		setStructuredFieldIndex(0);
+		setDraftText("");
+		addMessage("user", "Structured Form");
+		askStructuredQuestion(0);
 	};
 
 	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
-		if (!file) {
-			return;
-		}
+		if (!file) return;
 
 		setIsUploading(true);
 		const reader = new FileReader();
@@ -149,9 +290,7 @@ export default function Home() {
 						}),
 					});
 
-					if (!response.ok) {
-						throw new Error("Unable to parse PDF");
-					}
+					if (!response.ok) throw new Error("Unable to parse PDF");
 
 					const result = await response.json();
 					setResumeContent(result.text || "");
@@ -169,51 +308,9 @@ export default function Home() {
 				addMessage("user", `Uploaded ${file.name}`);
 				askForUpdates();
 			}
-
 			setIsUploading(false);
 		};
-
 		reader.readAsArrayBuffer(file);
-	};
-
-	const handleSubmitText = (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		const value = draftText.trim();
-
-		if (stage === "paste") {
-			if (!value) {
-				return;
-			}
-			setResumeContent(value);
-			addMessage("user", "Shared my resume content.");
-			setDraftText("");
-			askForUpdates();
-			return;
-		}
-
-		if (stage === "customUpdates") {
-			setCustomUpdates(value);
-			addMessage(
-				"user",
-				value || "No additional requirements.",
-			);
-			setDraftText("");
-			addMessage(
-				"bot",
-				"Got it. Paste the job description to tailor your resume, or skip this step.",
-			);
-			setStage("jobDescription");
-			return;
-		}
-
-		if (stage === "jobDescription") {
-			addMessage(
-				"user",
-				value || "Skip job description",
-			);
-			setDraftText("");
-			void generateResume(value);
-		}
 	};
 
 	const handleContinueUpdates = () => {
@@ -239,7 +336,7 @@ export default function Home() {
 		addMessage("user", "No additional requirements.");
 		addMessage(
 			"bot",
-			"Perfect. Add a job description for tailoring, or skip and generate now.",
+			"Add a job description for tailoring, or skip and generate now.",
 		);
 		setStage("jobDescription");
 	};
@@ -249,7 +346,7 @@ export default function Home() {
 		void generateResume("");
 	};
 
-	const generateResume = async (jd: string) => {
+	const generateResume = async (jobDescription: string) => {
 		setStage("generating");
 		setIsGenerating(true);
 		addMessage("bot", "Generating your tailored resume now...");
@@ -268,20 +365,18 @@ export default function Home() {
 				body: JSON.stringify({
 					content: resumeContent,
 					updates: combinedUpdates,
-					jobDescription: jd,
+					jobDescription,
 				}),
 			});
 
-			if (!response.ok) {
-				throw new Error("Generation failed");
-			}
+			if (!response.ok) throw new Error("Generation failed");
 
 			const result = await response.json();
 			setGeneratedResume(result.data);
 			setStage("result");
 			addMessage(
 				"bot",
-				"Your resume is ready. You can preview it below and download as a PDF.",
+				"Your resume is ready. I shared it below — download it as a PDF.",
 			);
 		} catch {
 			setStage("jobDescription");
@@ -294,24 +389,78 @@ export default function Home() {
 		}
 	};
 
+	const handleSubmitText = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		const value = draftText.trim();
+
+		if (stage === "paste") {
+			if (!value) return;
+			setResumeContent(value);
+			addMessage("user", "Shared my resume content.");
+			setDraftText("");
+			askForUpdates();
+			return;
+		}
+
+		if (stage === "structuredField") {
+			const question = structuredQuestions[structuredFieldIndex];
+			if (!question) return;
+			if (question.required && !value) return;
+
+			const updatedFields = { ...structuredFields, [question.key]: value };
+			setStructuredFields(updatedFields);
+			addMessage("user", value || "(left blank)");
+			setDraftText("");
+
+			if (structuredFieldIndex + 1 >= structuredQuestions.length) {
+				setResumeContent(buildStructuredResumeContent(updatedFields));
+				addMessage("bot", "Great, I captured your details.");
+				askForUpdates();
+				return;
+			}
+
+			const next = structuredFieldIndex + 1;
+			setStructuredFieldIndex(next);
+			const nextQuestion = structuredQuestions[next];
+			if (nextQuestion) {
+				addMessage(
+					"bot",
+					nextQuestion.required
+						? `${nextQuestion.label} (required)`
+						: `${nextQuestion.label} (optional)`,
+				);
+			}
+			return;
+		}
+
+		if (stage === "customUpdates") {
+			setCustomUpdates(value);
+			addMessage("user", value || "No additional requirements.");
+			setDraftText("");
+			addMessage(
+				"bot",
+				"Paste the job description to tailor your resume, or skip this step.",
+			);
+			setStage("jobDescription");
+			return;
+		}
+
+		if (stage === "jobDescription") {
+			addMessage("user", value || "Skip job description");
+			setDraftText("");
+			void generateResume(value);
+		}
+	};
+
 	const resetConversation = () => {
-		setMessages([
-			{
-				id: 1,
-				sender: "bot",
-				text: "Hi! I can tailor your resume in a quick chat.",
-			},
-			{
-				id: 2,
-				sender: "bot",
-				text: "How would you like to provide your current resume?",
-			},
-		]);
+		setMessages(initialMessages);
 		messageId.current = 3;
 		setStage("method");
 		setInputMethod(null);
 		setDraftText("");
 		setResumeContent("");
+		setStructuredFields(initialStructuredFields);
+		setStructuredFieldIndex(0);
 		setSelectedUpdates([]);
 		setCustomUpdates("");
 		setGeneratedResume(null);
@@ -400,7 +549,26 @@ export default function Home() {
 									variant="outline"
 									className="cursor-pointer"
 								>
-									Paste Resume Content
+									Paste Resume
+								</Button>
+							</div>
+						)}
+
+						{stage === "pasteMode" && (
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+								<Button
+									onClick={() => handlePasteModeSelect("simple")}
+									variant="outline"
+									className="cursor-pointer"
+								>
+									Simple Paste
+								</Button>
+								<Button
+									onClick={() => handlePasteModeSelect("structured")}
+									variant="outline"
+									className="cursor-pointer"
+								>
+									Structured Form
 								</Button>
 							</div>
 						)}
@@ -424,12 +592,11 @@ export default function Home() {
 								/>
 								<Button
 									onClick={() => {
-										setInputMethod("paste");
-										setStage("paste");
+										setStage("pasteMode");
 										addMessage("user", "Switching to paste mode");
 										addMessage(
 											"bot",
-											"No problem. Paste your resume content below.",
+											"Do you want Simple Paste or Structured Form?",
 										);
 									}}
 									variant="ghost"
@@ -480,29 +647,37 @@ export default function Home() {
 						)}
 
 						{(stage === "paste" ||
+							stage === "structuredField" ||
 							stage === "customUpdates" ||
 							stage === "jobDescription") && (
 							<form onSubmit={handleSubmitText} className="space-y-2">
+								{stage === "structuredField" && currentStructuredQuestion && (
+									<p className="text-xs text-muted-foreground">
+										{currentStructuredQuestion.required
+											? `${currentStructuredQuestion.label} is required.`
+											: `${currentStructuredQuestion.label} is optional.`}
+									</p>
+								)}
 								<Textarea
 									value={draftText}
 									onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
 										setDraftText(e.target.value)
 									}
-									rows={stage === "paste" ? 6 : 4}
+									rows={stage === "paste" ? 7 : 4}
 									placeholder={
 										stage === "paste"
 											? "Paste your resume content..."
-											: stage === "customUpdates"
-												? "Type any additional requirements (optional)..."
-												: "Paste job description (optional)..."
+											: stage === "structuredField" && currentStructuredQuestion
+												? currentStructuredQuestion.placeholder
+												: stage === "customUpdates"
+													? "Type any additional requirements (optional)..."
+													: "Paste the job description (optional)..."
 									}
 								/>
 								<div className="flex gap-2">
 									<Button
 										type="submit"
-										disabled={
-											isGenerating || (stage === "paste" && !draftText.trim())
-										}
+										disabled={disableTextSubmit}
 										className="flex-1 cursor-pointer"
 									>
 										<Send className="h-4 w-4 mr-2" />
@@ -539,7 +714,9 @@ export default function Home() {
 								<div className="text-xs text-muted-foreground">
 									{inputMethod === "upload"
 										? "Using your uploaded resume as input."
-										: "Using your pasted resume content as input."}
+										: inputMethod === "paste-simple"
+											? "Using your pasted resume content as input."
+											: "Using your structured chat responses as input."}
 								</div>
 							)}
 					</div>
