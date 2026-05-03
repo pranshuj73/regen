@@ -1,11 +1,12 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
+const inter = Inter({
 	variable: "--font-geist-sans",
 	subsets: ["latin"],
+	display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -25,9 +26,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased dark`}
-			>
+			<body className={`${inter.variable} ${geistMono.variable} antialiased dark`}>
 				{children}
 			</body>
 			<GoogleAnalytics gaId="G-V0FLTBFJ26" />
