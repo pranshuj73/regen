@@ -1,4 +1,4 @@
-import { FileText, Upload } from "lucide-react";
+import { FileText, History, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -11,9 +11,16 @@ import {
 interface MenuStepProps {
 	onUpload: () => void;
 	onPaste: () => void;
+	hasPersistedHistory: boolean;
+	onContinueLastResume: () => void;
 }
 
-export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
+export function MenuStep({
+	onUpload,
+	onPaste,
+	hasPersistedHistory,
+	onContinueLastResume,
+}: MenuStepProps) {
 	return (
 		<Card className="w-full h-full py-16">
 			<CardHeader className="text-center mb-4">
@@ -26,6 +33,22 @@ export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
+				{hasPersistedHistory && (
+					<div className="border border-dashed border-blue-200 bg-blue-50/40 rounded-lg p-4">
+						<p className="text-sm font-medium text-blue-900 mb-3">
+							Continue where you left off
+						</p>
+						<Button
+							onClick={onContinueLastResume}
+							variant="outline"
+							className="w-full bg-white hover:bg-blue-50 border-blue-200 hover:border-blue-300 cursor-pointer"
+						>
+							<History className="h-4 w-4 text-blue-700" />
+							Continue last resume
+						</Button>
+					</div>
+				)}
+
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<Button
 						onClick={onUpload}
@@ -52,10 +75,11 @@ export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
 					</Button>
 				</div>
 				<p className="text-xs text-center text-gray-500 mt-10 -mb-10">
-					NB: We don't save any of your details, there's no auth, there's no db.
+					NB: We store resume data only in your browser (local storage), never on
+					our servers.
 					<br />
-					Please make sure to download the generated resume or it'll be lost to
-					the void.
+					Only your latest generated resume is kept locally. Click Generate New to
+					start fresh.
 				</p>
 			</CardContent>
 		</Card>
