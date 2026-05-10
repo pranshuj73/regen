@@ -1,4 +1,4 @@
-import { FileText, Upload } from "lucide-react";
+import { Clock3, FileText, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -11,9 +11,25 @@ import {
 interface MenuStepProps {
 	onUpload: () => void;
 	onPaste: () => void;
+	onContinueFromLastGeneration?: () => void;
+	onClearLastGeneration?: () => void;
+	lastGenerationSavedAt?: string;
 }
 
-export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
+export function MenuStep({
+	onUpload,
+	onPaste,
+	onContinueFromLastGeneration,
+	onClearLastGeneration,
+	lastGenerationSavedAt,
+}: MenuStepProps) {
+	const hasLastGeneration = Boolean(
+		onContinueFromLastGeneration && lastGenerationSavedAt,
+	);
+
+	const formattedSavedAt = lastGenerationSavedAt
+		? new Date(lastGenerationSavedAt).toLocaleString()
+		: "";
 	return (
 		<Card className="w-full h-full py-16">
 			<CardHeader className="text-center mb-4">
@@ -26,6 +42,39 @@ export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
+				{hasLastGeneration && (
+					<div className="border border-blue-700/40 bg-blue-950/20 rounded-lg p-4 mb-4">
+						<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+							<div>
+								<p className="text-sm font-semibold text-white flex items-center gap-2">
+									<Clock3 className="h-4 w-4 text-blue-400" />
+									Resume History
+								</p>
+								<p className="text-xs text-gray-400 mt-1">
+									Continue from your last generated resume and keep iterating.
+								</p>
+								<p className="text-xs text-gray-500 mt-1">
+									Last saved: {formattedSavedAt}
+								</p>
+							</div>
+							<div className="flex gap-2">
+								<Button
+									onClick={onContinueFromLastGeneration}
+									className="cursor-pointer"
+								>
+									Continue Last Resume
+								</Button>
+								<Button
+									onClick={onClearLastGeneration}
+									variant="ghost"
+									className="cursor-pointer"
+								>
+									Clear
+								</Button>
+							</div>
+						</div>
+					</div>
+				)}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<Button
 						onClick={onUpload}
@@ -52,10 +101,10 @@ export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
 					</Button>
 				</div>
 				<p className="text-xs text-center text-gray-500 mt-10 -mb-10">
-					NB: We don't save any of your details, there's no auth, there's no db.
+					NB: We don't use auth or a backend database. We only keep your latest
+					generation in your browser's local storage.
 					<br />
-					Please make sure to download the generated resume or it'll be lost to
-					the void.
+					Please download your generated resume for safekeeping.
 				</p>
 			</CardContent>
 		</Card>

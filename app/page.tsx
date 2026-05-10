@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	JDStep,
 	MenuStep,
@@ -11,6 +11,77 @@ import {
 	UpdatesStep,
 	UploadStep,
 } from "@/components/generator";
+
+const LAST_GENERATION_STORAGE_KEY = "regen:last-generation";
+
+const resumeToEditableContent = (resume: any): string => {
+	if (!resume || typeof resume !== "object") return "";
+
+	const skills = resume.technical_skills || {};
+	const experience = Array.isArray(resume.experience) ? resume.experience : [];
+	const projects = Array.isArray(resume.projects) ? resume.projects : [];
+	const education = Array.isArray(resume.education) ? resume.education : [];
+	const certifications = Array.isArray(resume.certifications)
+		? resume.certifications
+		: [];
+
+	return [
+		resume.name ? `Name: ${resume.name}` : "",
+		resume.email ? `Email: ${resume.email}` : "",
+		resume.phone ? `Phone: ${resume.phone}` : "",
+		resume.address ? `Address: ${resume.address}` : "",
+		resume.linkedin ? `LinkedIn: ${resume.linkedin}` : "",
+		resume.github ? `GitHub: ${resume.github}` : "",
+		"",
+		"Summary:",
+		resume.summary || "",
+		"",
+		"Technical Skills:",
+		Array.isArray(skills.languages)
+			? `Languages: ${skills.languages.join(", ")}`
+			: "",
+		Array.isArray(skills.frameworks)
+			? `Frameworks: ${skills.frameworks.join(", ")}`
+			: "",
+		Array.isArray(skills.development_tools)
+			? `Development Tools: ${skills.development_tools.join(", ")}`
+			: "",
+		Array.isArray(skills.libraries)
+			? `Libraries: ${skills.libraries.join(", ")}`
+			: "",
+		"",
+		"Experience:",
+		...experience.flatMap((exp: any, index: number) => [
+			`${index + 1}. ${exp.position || ""} - ${exp.organization || ""}`,
+			`${exp.duration || ""}${exp.location ? ` | ${exp.location}` : ""}`,
+			...(Array.isArray(exp.responsibilities)
+				? exp.responsibilities.map((item: string) => `- ${item}`)
+				: []),
+			"",
+		]),
+		"Projects:",
+		...projects.flatMap((project: any, index: number) => [
+			`${index + 1}. ${project.title || ""}${project.year ? ` (${project.year})` : ""}`,
+			project.description || "",
+			Array.isArray(project.technologies)
+				? `Technologies: ${project.technologies.join(", ")}`
+				: "",
+			project.url ? `URL: ${project.url}` : "",
+			"",
+		]),
+		"Education:",
+		...education.map(
+			(edu: any) =>
+				`${edu.degree || ""} - ${edu.institution || ""}${edu.duration ? ` (${edu.duration})` : ""}${edu.location ? ` | ${edu.location}` : ""}`,
+		),
+		"",
+		"Certifications:",
+		...certifications,
+	]
+		.filter((line) => typeof line === "string")
+		.join("\n")
+		.trim();
+};
 
 type Step = "menu" | "upload" | "paste" | "updates" | "jd" | "preview";
 
@@ -29,20 +100,43 @@ interface NavState {
 	pageState: PageState;
 }
 
+interface LastGenerationState {
+	navState: NavState;
+	generatedResume: any;
+	savedAt: string;
+}
+
+const initialNavState: NavState = {
+	history: ["menu"],
+	pageState: {
+		upload: { content: "" },
+		updates: { selectedIds: [], customUpdates: "", combinedText: "" },
+		jd: { text: "" },
+	},
+};
+
 export default function Home() {
-	const [navState, setNavState] = useState<NavState>({
-		history: ["menu"],
-		pageState: {
-			upload: { content: "" },
-			updates: { selectedIds: [], customUpdates: "", combinedText: "" },
-			jd: { text: "" },
-		},
-	});
+	const [navState, setNavState] = useState<NavState>(initialNavState);
 	const [generatedResume, setGeneratedResume] = useState<any>("");
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
+	const [lastGeneration, setLastGeneration] =
+		useState<LastGenerationState | null>(null);
 
 	const currentStep = navState.history[navState.history.length - 1];
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		try {
+			const saved = window.localStorage.getItem(LAST_GENERATION_STORAGE_KEY);
+			if (!saved) return;
+			const parsed = JSON.parse(saved) as LastGenerationState;
+			if (!parsed?.navState || !parsed?.generatedResume) return;
+			setLastGeneration(parsed);
+		} catch {
+			window.localStorage.removeItem(LAST_GENERATION_STORAGE_KEY);
+		}
+	}, []);
 
 	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
@@ -140,16 +234,14 @@ export default function Home() {
 	};
 
 	const handleJDSubmit = (jd: string) => {
-		setNavState((prev) => ({
-			...prev,
-			pageState: { ...prev.pageState, jd: { text: jd } },
-		}));
+		const nextNavState: NavState = {
+			...navState,
+			pageState: { ...navState.pageState, jd: { text: jd } },
+			history: [...navState.history, "preview"],
+		};
+		setNavState(nextNavState);
 		setIsGenerating(true);
-		setNavState((prev) => ({
-			...prev,
-			history: [...prev.history, "preview"],
-		}));
-		setTimeout(() => generateResume(), 0);
+		setTimeout(() => generateResume(nextNavState), 0);
 	};
 
 	const handleJDChange = (text: string) => {
@@ -159,15 +251,14 @@ export default function Home() {
 		}));
 	};
 
-	const generateResume = async () => {
-		// Update to show generating state
+	const generateResume = async (sourceNavState: NavState = navState) => {
 		setIsGenerating(true);
 
 		try {
 			const payload = {
-				content: navState.pageState.upload?.content || "",
-				updates: navState.pageState.updates?.combinedText || "",
-				jobDescription: navState.pageState.jd?.text || "",
+				content: sourceNavState.pageState.upload?.content || "",
+				updates: sourceNavState.pageState.updates?.combinedText || "",
+				jobDescription: sourceNavState.pageState.jd?.text || "",
 			};
 			const response = await fetch("/api/generate", {
 				method: "POST",
@@ -178,26 +269,55 @@ export default function Home() {
 			if (response.ok) {
 				const result = await response.json();
 				setGeneratedResume(result.data);
-				setIsGenerating(false);
+				const latestResumeContent =
+					resumeToEditableContent(result.data) ||
+					JSON.stringify(result.data, null, 2);
+				const snapshot: LastGenerationState = {
+					navState: {
+						...sourceNavState,
+						pageState: {
+							...sourceNavState.pageState,
+							upload: { content: latestResumeContent },
+						},
+					},
+					generatedResume: result.data,
+					savedAt: new Date().toISOString(),
+				};
+				if (typeof window !== "undefined") {
+					window.localStorage.setItem(
+						LAST_GENERATION_STORAGE_KEY,
+						JSON.stringify(snapshot),
+					);
+				}
+				setLastGeneration(snapshot);
 			}
-		} catch (error) {
+		} catch {
 			// noop
+		} finally {
 			setIsGenerating(false);
 		}
 	};
 
 	const handleGenerateNew = () => {
-		setNavState({
-			history: ["menu"],
-			pageState: {
-				upload: { content: "" },
-				updates: { selectedIds: [], customUpdates: "", combinedText: "" },
-				jd: { text: "" },
-			},
-		});
+		setNavState(initialNavState);
 		setGeneratedResume("");
 		setIsGenerating(false);
 		setIsUploading(false);
+	};
+
+	const handleContinueFromLastGeneration = () => {
+		if (!lastGeneration) return;
+		setNavState(lastGeneration.navState);
+		setGeneratedResume(lastGeneration.generatedResume);
+		setIsGenerating(false);
+		setIsUploading(false);
+	};
+
+	const clearLastGeneration = () => {
+		if (typeof window !== "undefined") {
+			window.localStorage.removeItem(LAST_GENERATION_STORAGE_KEY);
+		}
+		setLastGeneration(null);
 	};
 
 	const navigateTo = (step: Step) => {
@@ -224,6 +344,15 @@ export default function Home() {
 								<MenuStep
 									onUpload={() => navigateTo("upload")}
 									onPaste={() => navigateTo("paste")}
+									onContinueFromLastGeneration={
+										lastGeneration
+											? handleContinueFromLastGeneration
+											: undefined
+									}
+									onClearLastGeneration={
+										lastGeneration ? clearLastGeneration : undefined
+									}
+									lastGenerationSavedAt={lastGeneration?.savedAt}
 								/>
 							);
 						case "upload":
@@ -257,12 +386,13 @@ export default function Home() {
 								<JDStep
 									onSubmit={handleJDSubmit}
 									onSkip={() => {
+										const nextNavState: NavState = {
+											...navState,
+											history: [...navState.history, "preview"],
+										};
 										setIsGenerating(true);
-										setNavState((prev) => ({
-											...prev,
-											history: [...prev.history, "preview"],
-										}));
-										setTimeout(() => generateResume(), 0);
+										setNavState(nextNavState);
+										setTimeout(() => generateResume(nextNavState), 0);
 									}}
 									initialJD={navState.pageState?.jd?.text}
 									onChangeJD={handleJDChange}
@@ -282,6 +412,15 @@ export default function Home() {
 								<MenuStep
 									onUpload={() => navigateTo("upload")}
 									onPaste={() => navigateTo("paste")}
+									onContinueFromLastGeneration={
+										lastGeneration
+											? handleContinueFromLastGeneration
+											: undefined
+									}
+									onClearLastGeneration={
+										lastGeneration ? clearLastGeneration : undefined
+									}
+									lastGenerationSavedAt={lastGeneration?.savedAt}
 								/>
 							);
 					}
