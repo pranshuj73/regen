@@ -63,6 +63,33 @@ const isValidHistory = (history: unknown): history is Step[] => {
 	return history.every((step) => validSteps.includes(step as Step));
 };
 
+const getPersistedSession = (): PersistedSession | null => {
+	if (typeof window === "undefined") {
+		return null;
+	}
+
+	const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+	if (!raw) {
+		return null;
+	}
+
+	try {
+		const parsed = JSON.parse(raw) as PersistedSession;
+		if (
+			parsed?.navState &&
+			isValidHistory(parsed.navState.history) &&
+			parsed.generatedResume
+		) {
+			return parsed;
+		}
+		window.localStorage.removeItem(LOCAL_STORAGE_KEY);
+		return null;
+	} catch {
+		window.localStorage.removeItem(LOCAL_STORAGE_KEY);
+		return null;
+	}
+};
+
 export default function Home() {
 	const [navState, setNavState] = useState<NavState>(defaultNavState);
 	const [generatedResume, setGeneratedResume] = useState<unknown>("");
@@ -73,29 +100,20 @@ export default function Home() {
 	const currentStep = navState.history[navState.history.length - 1];
 
 	useEffect(() => {
+		setHasSavedState(Boolean(getPersistedSession()));
+
 		if (typeof window === "undefined") {
 			return;
 		}
 
-		const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-		if (!raw) {
-			return;
-		}
+		const handleStorage = () => {
+			setHasSavedState(Boolean(getPersistedSession()));
+		};
 
-		try {
-			const parsed = JSON.parse(raw) as PersistedSession;
-			if (
-				parsed?.navState &&
-				isValidHistory(parsed.navState.history) &&
-				parsed.generatedResume
-			) {
-				setHasSavedState(true);
-				return;
-			}
-			window.localStorage.removeItem(LOCAL_STORAGE_KEY);
-		} catch {
-			window.localStorage.removeItem(LOCAL_STORAGE_KEY);
-		}
+		window.addEventListener("storage", handleStorage);
+		return () => {
+			window.removeEventListener("storage", handleStorage);
+		};
 	}, []);
 
 	const persistLastState = useCallback((state: NavState, resume: unknown) => {
@@ -118,35 +136,16 @@ export default function Home() {
 	}, [generatedResume, navState, persistLastState]);
 
 	const restoreLastState = () => {
-		if (typeof window === "undefined") {
-			return;
-		}
-
-		const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-		if (!raw) {
-			return;
-		}
-
-		try {
-			const parsed = JSON.parse(raw) as PersistedSession;
-			if (
-				!parsed?.navState ||
-				!isValidHistory(parsed.navState.history) ||
-				!parsed.generatedResume
-			) {
-				window.localStorage.removeItem(LOCAL_STORAGE_KEY);
-				setHasSavedState(false);
-				return;
-			}
-
-			setNavState(parsed.navState);
-			setGeneratedResume(parsed.generatedResume);
-			setIsGenerating(false);
-			setIsUploading(false);
-		} catch {
-			window.localStorage.removeItem(LOCAL_STORAGE_KEY);
+		const persistedSession = getPersistedSession();
+		if (!persistedSession) {
 			setHasSavedState(false);
+			return;
 		}
+
+		setNavState(persistedSession.navState);
+		setGeneratedResume(persistedSession.generatedResume);
+		setIsGenerating(false);
+		setIsUploading(false);
 	};
 
 	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
