@@ -101,10 +101,10 @@ export function MenuStep({
 					</Button>
 				</div>
 				<p className="text-xs text-center text-gray-500 mt-10 -mb-10">
-					NB: We don't save any of your details, there's no auth, there's no db.
+					NB: We don't use auth or a backend database. We only keep your latest
+					generation in your browser's local storage.
 					<br />
-					Please make sure to download the generated resume or it'll be lost to
-					the void.
+					Please download your generated resume for safekeeping.
 				</p>
 			</CardContent>
 		</Card>

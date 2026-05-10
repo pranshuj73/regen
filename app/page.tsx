@@ -14,6 +14,75 @@ import {
 
 const LAST_GENERATION_STORAGE_KEY = "regen:last-generation";
 
+const resumeToEditableContent = (resume: any): string => {
+	if (!resume || typeof resume !== "object") return "";
+
+	const skills = resume.technical_skills || {};
+	const experience = Array.isArray(resume.experience) ? resume.experience : [];
+	const projects = Array.isArray(resume.projects) ? resume.projects : [];
+	const education = Array.isArray(resume.education) ? resume.education : [];
+	const certifications = Array.isArray(resume.certifications)
+		? resume.certifications
+		: [];
+
+	return [
+		resume.name ? `Name: ${resume.name}` : "",
+		resume.email ? `Email: ${resume.email}` : "",
+		resume.phone ? `Phone: ${resume.phone}` : "",
+		resume.address ? `Address: ${resume.address}` : "",
+		resume.linkedin ? `LinkedIn: ${resume.linkedin}` : "",
+		resume.github ? `GitHub: ${resume.github}` : "",
+		"",
+		"Summary:",
+		resume.summary || "",
+		"",
+		"Technical Skills:",
+		Array.isArray(skills.languages)
+			? `Languages: ${skills.languages.join(", ")}`
+			: "",
+		Array.isArray(skills.frameworks)
+			? `Frameworks: ${skills.frameworks.join(", ")}`
+			: "",
+		Array.isArray(skills.development_tools)
+			? `Development Tools: ${skills.development_tools.join(", ")}`
+			: "",
+		Array.isArray(skills.libraries)
+			? `Libraries: ${skills.libraries.join(", ")}`
+			: "",
+		"",
+		"Experience:",
+		...experience.flatMap((exp: any, index: number) => [
+			`${index + 1}. ${exp.position || ""} - ${exp.organization || ""}`,
+			`${exp.duration || ""}${exp.location ? ` | ${exp.location}` : ""}`,
+			...(Array.isArray(exp.responsibilities)
+				? exp.responsibilities.map((item: string) => `- ${item}`)
+				: []),
+			"",
+		]),
+		"Projects:",
+		...projects.flatMap((project: any, index: number) => [
+			`${index + 1}. ${project.title || ""}${project.year ? ` (${project.year})` : ""}`,
+			project.description || "",
+			Array.isArray(project.technologies)
+				? `Technologies: ${project.technologies.join(", ")}`
+				: "",
+			project.url ? `URL: ${project.url}` : "",
+			"",
+		]),
+		"Education:",
+		...education.map(
+			(edu: any) =>
+				`${edu.degree || ""} - ${edu.institution || ""}${edu.duration ? ` (${edu.duration})` : ""}${edu.location ? ` | ${edu.location}` : ""}`,
+		),
+		"",
+		"Certifications:",
+		...certifications,
+	]
+		.filter((line) => typeof line === "string")
+		.join("\n")
+		.trim();
+};
+
 type Step = "menu" | "upload" | "paste" | "updates" | "jd" | "preview";
 
 interface PageState {
@@ -200,8 +269,17 @@ export default function Home() {
 			if (response.ok) {
 				const result = await response.json();
 				setGeneratedResume(result.data);
+				const latestResumeContent =
+					resumeToEditableContent(result.data) ||
+					JSON.stringify(result.data, null, 2);
 				const snapshot: LastGenerationState = {
-					navState: sourceNavState,
+					navState: {
+						...sourceNavState,
+						pageState: {
+							...sourceNavState.pageState,
+							upload: { content: latestResumeContent },
+						},
+					},
 					generatedResume: result.data,
 					savedAt: new Date().toISOString(),
 				};
@@ -229,25 +307,7 @@ export default function Home() {
 
 	const handleContinueFromLastGeneration = () => {
 		if (!lastGeneration) return;
-
-		const generatedResumeContent = JSON.stringify(
-			lastGeneration.generatedResume,
-			null,
-			2,
-		);
-
-		setNavState({
-			history: ["menu", "updates"],
-			pageState: {
-				upload: { content: generatedResumeContent },
-				updates: lastGeneration.navState.pageState.updates || {
-					selectedIds: [],
-					customUpdates: "",
-					combinedText: "",
-				},
-				jd: lastGeneration.navState.pageState.jd || { text: "" },
-			},
-		});
+		setNavState(lastGeneration.navState);
 		setGeneratedResume(lastGeneration.generatedResume);
 		setIsGenerating(false);
 		setIsUploading(false);
