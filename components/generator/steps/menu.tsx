@@ -1,4 +1,4 @@
-import { FileText, Upload } from "lucide-react";
+import { FileClock, FileText, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -11,9 +11,10 @@ import {
 interface MenuStepProps {
 	onUpload: () => void;
 	onPaste: () => void;
+	onContinue?: () => void;
 }
 
-export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
+export function MenuStep({ onUpload, onPaste, onContinue }: MenuStepProps) {
 	return (
 		<Card className="w-full h-full py-16">
 			<CardHeader className="text-center mb-4">
@@ -26,7 +27,9 @@ export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<div
+					className={`grid grid-cols-1 ${onContinue ? "md:grid-cols-3" : "md:grid-cols-2"} gap-4`}
+				>
 					<Button
 						onClick={onUpload}
 						className="h-32 flex flex-col items-center justify-center space-y-2 bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-gray-400 cursor-pointer"
@@ -50,12 +53,24 @@ export function MenuStep({ onUpload, onPaste }: MenuStepProps) {
 							Paste your resume content
 						</span>
 					</Button>
+
+					{onContinue && (
+						<Button
+							onClick={onContinue}
+							className="h-32 flex flex-col items-center justify-center space-y-2 bg-white hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-gray-400 cursor-pointer"
+							variant="outline"
+						>
+							<FileClock className="h-8 w-8 text-purple-600" />
+							<span className="font-semibold">Continue Last Resume</span>
+							<span className="text-sm text-gray-500">
+								Pick up right where you left off
+							</span>
+						</Button>
+					)}
 				</div>
 				<p className="text-xs text-center text-gray-500 mt-10 -mb-10">
-					NB: We don't save any of your details, there's no auth, there's no db.
-					<br />
-					Please make sure to download the generated resume or it'll be lost to
-					the void.
+					NB: We don&apos;t save any of your details to a server. Your latest
+					generation is stored only in this browser so you can continue later.
 				</p>
 			</CardContent>
 		</Card>
