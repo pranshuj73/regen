@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	JDStep,
 	MenuStep,
@@ -29,20 +29,84 @@ interface NavState {
 	pageState: PageState;
 }
 
+type GeneratedResume = unknown;
+
+interface PersistedGeneration {
+	navState: NavState;
+	generatedResume: GeneratedResume;
+	savedAt: number;
+}
+
+const LAST_GENERATION_STORAGE_KEY = "regen:last-generation";
+
+const createInitialNavState = (): NavState => ({
+	history: ["menu"],
+	pageState: {
+		upload: { content: "" },
+		updates: { selectedIds: [], customUpdates: "", combinedText: "" },
+		jd: { text: "" },
+	},
+});
+
+const hasProgress = (navState: NavState, generatedResume: GeneratedResume) =>
+	Boolean(
+		navState.pageState.upload?.content?.trim() ||
+			navState.pageState.updates?.combinedText?.trim() ||
+			navState.pageState.jd?.text?.trim() ||
+			generatedResume,
+	);
+
+const loadLastGeneration = (): PersistedGeneration | null => {
+	try {
+		const raw = window.localStorage.getItem(LAST_GENERATION_STORAGE_KEY);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw) as PersistedGeneration;
+		if (!parsed?.navState?.history?.length) return null;
+		return parsed;
+	} catch {
+		return null;
+	}
+};
+
 export default function Home() {
-	const [navState, setNavState] = useState<NavState>({
-		history: ["menu"],
-		pageState: {
-			upload: { content: "" },
-			updates: { selectedIds: [], customUpdates: "", combinedText: "" },
-			jd: { text: "" },
-		},
-	});
-	const [generatedResume, setGeneratedResume] = useState<any>("");
+	const [navState, setNavState] = useState<NavState>(createInitialNavState);
+	const [generatedResume, setGeneratedResume] = useState<GeneratedResume>("");
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
+	const [hasLastGeneration, setHasLastGeneration] = useState(false);
+
+	useEffect(() => {
+		setHasLastGeneration(Boolean(loadLastGeneration()));
+	}, []);
+
+	useEffect(() => {
+		if (!hasProgress(navState, generatedResume)) return;
+
+		const payload: PersistedGeneration = {
+			navState,
+			generatedResume,
+			savedAt: Date.now(),
+		};
+		window.localStorage.setItem(
+			LAST_GENERATION_STORAGE_KEY,
+			JSON.stringify(payload),
+		);
+		setHasLastGeneration(true);
+	}, [generatedResume, navState]);
 
 	const currentStep = navState.history[navState.history.length - 1];
+
+	const handleContinueLastGeneration = () => {
+		const saved = loadLastGeneration();
+		if (!saved) {
+			setHasLastGeneration(false);
+			return;
+		}
+		setNavState(saved.navState);
+		setGeneratedResume(saved.generatedResume ?? "");
+		setIsGenerating(false);
+		setIsUploading(false);
+	};
 
 	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
@@ -180,21 +244,16 @@ export default function Home() {
 				setGeneratedResume(result.data);
 				setIsGenerating(false);
 			}
-		} catch (error) {
+		} catch (_error) {
 			// noop
 			setIsGenerating(false);
 		}
 	};
 
 	const handleGenerateNew = () => {
-		setNavState({
-			history: ["menu"],
-			pageState: {
-				upload: { content: "" },
-				updates: { selectedIds: [], customUpdates: "", combinedText: "" },
-				jd: { text: "" },
-			},
-		});
+		window.localStorage.removeItem(LAST_GENERATION_STORAGE_KEY);
+		setHasLastGeneration(false);
+		setNavState(createInitialNavState());
 		setGeneratedResume("");
 		setIsGenerating(false);
 		setIsUploading(false);
@@ -224,6 +283,9 @@ export default function Home() {
 								<MenuStep
 									onUpload={() => navigateTo("upload")}
 									onPaste={() => navigateTo("paste")}
+									onContinue={
+										hasLastGeneration ? handleContinueLastGeneration : undefined
+									}
 								/>
 							);
 						case "upload":
@@ -282,6 +344,9 @@ export default function Home() {
 								<MenuStep
 									onUpload={() => navigateTo("upload")}
 									onPaste={() => navigateTo("paste")}
+									onContinue={
+										hasLastGeneration ? handleContinueLastGeneration : undefined
+									}
 								/>
 							);
 					}
