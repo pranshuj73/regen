@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	JDStep,
 	MenuStep,
@@ -29,20 +29,125 @@ interface NavState {
 	pageState: PageState;
 }
 
+interface PersistedSession {
+	navState: NavState;
+	generatedResume: unknown;
+	updatedAt: number;
+}
+
+const LOCAL_STORAGE_KEY = "regen:last-generation";
+
+const defaultNavState: NavState = {
+	history: ["menu"],
+	pageState: {
+		upload: { content: "" },
+		updates: { selectedIds: [], customUpdates: "", combinedText: "" },
+		jd: { text: "" },
+	},
+};
+
+const validSteps: Step[] = [
+	"menu",
+	"upload",
+	"paste",
+	"updates",
+	"jd",
+	"preview",
+];
+
+const isValidHistory = (history: unknown): history is Step[] => {
+	if (!Array.isArray(history) || history.length === 0) {
+		return false;
+	}
+
+	return history.every((step) => validSteps.includes(step as Step));
+};
+
 export default function Home() {
-	const [navState, setNavState] = useState<NavState>({
-		history: ["menu"],
-		pageState: {
-			upload: { content: "" },
-			updates: { selectedIds: [], customUpdates: "", combinedText: "" },
-			jd: { text: "" },
-		},
-	});
-	const [generatedResume, setGeneratedResume] = useState<any>("");
+	const [navState, setNavState] = useState<NavState>(defaultNavState);
+	const [generatedResume, setGeneratedResume] = useState<unknown>("");
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
+	const [hasSavedState, setHasSavedState] = useState(false);
 
 	const currentStep = navState.history[navState.history.length - 1];
+
+	useEffect(() => {
+		if (typeof window === "undefined") {
+			return;
+		}
+
+		const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+		if (!raw) {
+			return;
+		}
+
+		try {
+			const parsed = JSON.parse(raw) as PersistedSession;
+			if (
+				parsed?.navState &&
+				isValidHistory(parsed.navState.history) &&
+				parsed.generatedResume
+			) {
+				setHasSavedState(true);
+				return;
+			}
+			window.localStorage.removeItem(LOCAL_STORAGE_KEY);
+		} catch {
+			window.localStorage.removeItem(LOCAL_STORAGE_KEY);
+		}
+	}, []);
+
+	const persistLastState = useCallback((state: NavState, resume: unknown) => {
+		if (typeof window === "undefined" || !resume) {
+			return;
+		}
+
+		const payload: PersistedSession = {
+			navState: state,
+			generatedResume: resume,
+			updatedAt: Date.now(),
+		};
+
+		window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
+		setHasSavedState(true);
+	}, []);
+
+	useEffect(() => {
+		persistLastState(navState, generatedResume);
+	}, [generatedResume, navState, persistLastState]);
+
+	const restoreLastState = () => {
+		if (typeof window === "undefined") {
+			return;
+		}
+
+		const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+		if (!raw) {
+			return;
+		}
+
+		try {
+			const parsed = JSON.parse(raw) as PersistedSession;
+			if (
+				!parsed?.navState ||
+				!isValidHistory(parsed.navState.history) ||
+				!parsed.generatedResume
+			) {
+				window.localStorage.removeItem(LOCAL_STORAGE_KEY);
+				setHasSavedState(false);
+				return;
+			}
+
+			setNavState(parsed.navState);
+			setGeneratedResume(parsed.generatedResume);
+			setIsGenerating(false);
+			setIsUploading(false);
+		} catch {
+			window.localStorage.removeItem(LOCAL_STORAGE_KEY);
+			setHasSavedState(false);
+		}
+	};
 
 	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
@@ -180,21 +285,13 @@ export default function Home() {
 				setGeneratedResume(result.data);
 				setIsGenerating(false);
 			}
-		} catch (error) {
-			// noop
+		} catch {
 			setIsGenerating(false);
 		}
 	};
 
 	const handleGenerateNew = () => {
-		setNavState({
-			history: ["menu"],
-			pageState: {
-				upload: { content: "" },
-				updates: { selectedIds: [], customUpdates: "", combinedText: "" },
-				jd: { text: "" },
-			},
-		});
+		setNavState(defaultNavState);
 		setGeneratedResume("");
 		setIsGenerating(false);
 		setIsUploading(false);
@@ -224,6 +321,8 @@ export default function Home() {
 								<MenuStep
 									onUpload={() => navigateTo("upload")}
 									onPaste={() => navigateTo("paste")}
+									hasLastState={hasSavedState}
+									onContinueLastState={restoreLastState}
 								/>
 							);
 						case "upload":
@@ -282,6 +381,8 @@ export default function Home() {
 								<MenuStep
 									onUpload={() => navigateTo("upload")}
 									onPaste={() => navigateTo("paste")}
+									hasLastState={hasSavedState}
+									onContinueLastState={restoreLastState}
 								/>
 							);
 					}
