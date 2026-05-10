@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	JDStep,
 	MenuStep,
@@ -29,20 +29,119 @@ interface NavState {
 	pageState: PageState;
 }
 
+interface PersistedResumeSession {
+	generatedResume: any;
+	pageState: PageState;
+	restoreStep: "preview";
+	savedAt: number;
+}
+
+const LAST_RESUME_SESSION_KEY = "regen:last-resume-session";
+
+const createDefaultPageState = (): PageState => ({
+	upload: { content: "" },
+	updates: { selectedIds: [], customUpdates: "", combinedText: "" },
+	jd: { text: "" },
+});
+
+const createInitialNavState = (): NavState => ({
+	history: ["menu"],
+	pageState: createDefaultPageState(),
+});
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === "object" && value !== null;
+
+const isValidPageState = (value: unknown): value is PageState => {
+	if (!isRecord(value)) {
+		return false;
+	}
+
+	const upload = value.upload;
+	const updates = value.updates;
+	const jd = value.jd;
+
+	if (!isRecord(upload) || typeof upload.content !== "string") {
+		return false;
+	}
+
+	if (
+		!isRecord(updates) ||
+		!Array.isArray(updates.selectedIds) ||
+		!updates.selectedIds.every((id: unknown) => typeof id === "string") ||
+		typeof updates.customUpdates !== "string" ||
+		typeof updates.combinedText !== "string"
+	) {
+		return false;
+	}
+
+	if (!isRecord(jd) || typeof jd.text !== "string") {
+		return false;
+	}
+
+	return true;
+};
+
+const isValidPersistedSession = (
+	value: unknown,
+): value is PersistedResumeSession => {
+	if (!isRecord(value)) {
+		return false;
+	}
+
+	if (!isValidPageState(value.pageState)) {
+		return false;
+	}
+
+	if (value.restoreStep !== "preview") {
+		return false;
+	}
+
+	if (typeof value.savedAt !== "number") {
+		return false;
+	}
+
+	if (!("generatedResume" in value)) {
+		return false;
+	}
+
+	if (value.generatedResume === null || value.generatedResume === "") {
+		return false;
+	}
+
+	return true;
+};
+
 export default function Home() {
-	const [navState, setNavState] = useState<NavState>({
-		history: ["menu"],
-		pageState: {
-			upload: { content: "" },
-			updates: { selectedIds: [], customUpdates: "", combinedText: "" },
-			jd: { text: "" },
-		},
-	});
+	const [navState, setNavState] = useState<NavState>(createInitialNavState);
 	const [generatedResume, setGeneratedResume] = useState<any>("");
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
+	const [persistedSession, setPersistedSession] =
+		useState<PersistedResumeSession | null>(null);
 
 	const currentStep = navState.history[navState.history.length - 1];
+	const hasPersistedHistory = persistedSession !== null;
+
+	useEffect(() => {
+		try {
+			const rawSession = localStorage.getItem(LAST_RESUME_SESSION_KEY);
+			if (!rawSession) {
+				return;
+			}
+
+			const parsedSession: unknown = JSON.parse(rawSession);
+			if (isValidPersistedSession(parsedSession)) {
+				setPersistedSession(parsedSession);
+				return;
+			}
+
+			localStorage.removeItem(LAST_RESUME_SESSION_KEY);
+		} catch (error) {
+			localStorage.removeItem(LAST_RESUME_SESSION_KEY);
+			setPersistedSession(null);
+		}
+	}, []);
 
 	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
@@ -140,16 +239,21 @@ export default function Home() {
 	};
 
 	const handleJDSubmit = (jd: string) => {
+		const nextPageState: PageState = {
+			...navState.pageState,
+			jd: { text: jd },
+		};
+
 		setNavState((prev) => ({
 			...prev,
-			pageState: { ...prev.pageState, jd: { text: jd } },
+			pageState: nextPageState,
 		}));
 		setIsGenerating(true);
 		setNavState((prev) => ({
 			...prev,
 			history: [...prev.history, "preview"],
 		}));
-		setTimeout(() => generateResume(), 0);
+		setTimeout(() => generateResume(nextPageState), 0);
 	};
 
 	const handleJDChange = (text: string) => {
@@ -159,15 +263,15 @@ export default function Home() {
 		}));
 	};
 
-	const generateResume = async () => {
+	const generateResume = async (pageState: PageState = navState.pageState) => {
 		// Update to show generating state
 		setIsGenerating(true);
 
 		try {
 			const payload = {
-				content: navState.pageState.upload?.content || "",
-				updates: navState.pageState.updates?.combinedText || "",
-				jobDescription: navState.pageState.jd?.text || "",
+				content: pageState.upload?.content || "",
+				updates: pageState.updates?.combinedText || "",
+				jobDescription: pageState.jd?.text || "",
 			};
 			const response = await fetch("/api/generate", {
 				method: "POST",
@@ -179,6 +283,23 @@ export default function Home() {
 				const result = await response.json();
 				setGeneratedResume(result.data);
 				setIsGenerating(false);
+
+				const latestSession: PersistedResumeSession = {
+					generatedResume: result.data,
+					pageState,
+					restoreStep: "preview",
+					savedAt: Date.now(),
+				};
+
+				try {
+					localStorage.setItem(
+						LAST_RESUME_SESSION_KEY,
+						JSON.stringify(latestSession),
+					);
+					setPersistedSession(latestSession);
+				} catch (error) {
+					console.error("Failed to persist latest resume session:", error);
+				}
 			}
 		} catch (error) {
 			// noop
@@ -187,15 +308,28 @@ export default function Home() {
 	};
 
 	const handleGenerateNew = () => {
-		setNavState({
-			history: ["menu"],
-			pageState: {
-				upload: { content: "" },
-				updates: { selectedIds: [], customUpdates: "", combinedText: "" },
-				jd: { text: "" },
-			},
-		});
+		try {
+			localStorage.removeItem(LAST_RESUME_SESSION_KEY);
+		} catch (error) {
+			// noop
+		}
+		setPersistedSession(null);
+		setNavState(createInitialNavState());
 		setGeneratedResume("");
+		setIsGenerating(false);
+		setIsUploading(false);
+	};
+
+	const handleContinueLastResume = () => {
+		if (!persistedSession) {
+			return;
+		}
+
+		setNavState({
+			history: ["menu", "updates", "jd", persistedSession.restoreStep],
+			pageState: persistedSession.pageState,
+		});
+		setGeneratedResume(persistedSession.generatedResume);
 		setIsGenerating(false);
 		setIsUploading(false);
 	};
@@ -224,6 +358,8 @@ export default function Home() {
 								<MenuStep
 									onUpload={() => navigateTo("upload")}
 									onPaste={() => navigateTo("paste")}
+									hasPersistedHistory={hasPersistedHistory}
+									onContinueLastResume={handleContinueLastResume}
 								/>
 							);
 						case "upload":
@@ -282,6 +418,8 @@ export default function Home() {
 								<MenuStep
 									onUpload={() => navigateTo("upload")}
 									onPaste={() => navigateTo("paste")}
+									hasPersistedHistory={hasPersistedHistory}
+									onContinueLastResume={handleContinueLastResume}
 								/>
 							);
 					}
